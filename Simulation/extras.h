@@ -12,6 +12,7 @@ namespace constants
 {
 	constexpr uint32_t WIDTH = 800;
 	constexpr uint32_t HEIGHT = 600;
+    constexpr uint32_t TEXTURE_COUNT = 1;
 
 	const std::vector<const char*> validationLayers =
 	{
@@ -134,5 +135,18 @@ namespace helpers
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
         endSingleTimeCommands(device, graphicsQueue, commandPool, commandBuffer);
+    }
+
+    inline VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code)
+    {
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = code.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create shader module!");
+        }
+        return shaderModule;
     }
 }
