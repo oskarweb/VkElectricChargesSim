@@ -13,6 +13,9 @@ add_executable (Simulation
     "Simulation.h"
     "Camera.h"
     "main.cpp" 
+    "PipelineFactory.h"
+    "Vertex.h" 
+    "Mesh.h"
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
