@@ -13,6 +13,10 @@
 
 #include "tiny_obj_loader.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+
 #include <iostream>
 #include <unordered_map>
 #include <array>
@@ -101,9 +105,12 @@ public:
 	
 	void init();
 	void drawFrame();
+	void recordImguiData(ImDrawData* data);
 	void cleanup();
 
+	std::vector<Renderable> m_renderableObjects;
 private:
+	void initImgui();
 	void mainLoop();
 	void cleanupSwapChain();
 	void recreateSwapChain();
@@ -162,7 +169,7 @@ private:
 	void drawObjects(VkCommandBuffer& commandBuffer, Renderable* objects, size_t count);
 
 	//VARS
-	std::vector<Renderable> m_renderableObjects;
+	//std::vector<Renderable> m_renderableObjects;
 	std::unordered_map<std::string, Mesh> m_meshes;
 	std::unordered_map<std::string, Material> m_materials;
 	std::vector<Texture> m_textures;
@@ -238,6 +245,9 @@ private:
 	VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 	bool m_framebufferResized = false;
+
+	VkDescriptorPool m_imguiDescriptorPool;
+	std::array<ImDrawData*, MAX_FRAMES_IN_FLIGHT> m_imguiDrawData{nullptr};
 };
 
 inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
