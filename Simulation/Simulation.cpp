@@ -11,6 +11,7 @@ void Simulation::initWindow()
 
 void Simulation::mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
+    ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
 	Simulation* simulation = static_cast<Simulation*>(glfwGetWindowUserPointer(window));
 	if (simulation)
 	{
@@ -115,9 +116,9 @@ void Simulation::keyCallback(GLFWwindow* window, int key, int scancode, int acti
             simulation->m_camera.lock(!simulation->m_camera.locked());
             if (simulation->m_camera.locked())
             {
-                simulation->m_camera.position() = glm::vec3(2.0f, 2.0f, 3.0f);
-                simulation->m_camera.setPitch(1.0f);
-                simulation->m_camera.setYaw(-8.5f);
+                //simulation->m_camera.position() = glm::vec3(2.0f, 2.0f, 3.0f);
+                //simulation->m_camera.setPitch(1.0f);
+                //simulation->m_camera.setYaw(-8.5f);
             }
         }
     }

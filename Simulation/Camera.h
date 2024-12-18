@@ -53,10 +53,12 @@ public:
 
     void processMouseInput(double xpos, double ypos)
     {
+        
 		if (m_locked)
 		{
 			return;
 		}
+        
         float xoffset = xpos - m_lastX;
         float yoffset = m_lastY - ypos;
         m_lastX = xpos;

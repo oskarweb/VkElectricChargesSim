@@ -25,8 +25,9 @@ endif()
 #External
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
-target_link_libraries(Simulation PRIVATE glfw Vulkan::Vulkan)
+target_link_libraries(Simulation PRIVATE glfw Vulkan::Vulkan imgui::imgui)
 
 target_include_directories(Simulation PRIVATE 
     "third_party/stb_image"

@@ -29,47 +29,94 @@ const bool enableValidationLayers = true;
 
 const std::vector<Vertex> cubeVertices = {
     // Front
-    {{-1.0f, -1.0f,  1.0f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}}, 
-    {{ 1.0f, -1.0f,  1.0f}, {0.0f, 0.0f,  1.0f}, {1.0f, 1.0f}},
-    {{ 1.0f,  1.0f,  1.0f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}},
-    {{-1.0f, -1.0f,  1.0f}, {0.0f, 0.0f,  1.0f}, {0.0f, 1.0f}},
-    {{ 1.0f,  1.0f,  1.0f}, {0.0f, 0.0f,  1.0f}, {1.0f, 0.0f}},
-    {{-1.0f,  1.0f,  1.0f}, {0.0f, 0.0f,  1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 0.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+
+    {{ 0.0, 0.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     // Back
-    {{ 1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-1.0f,  1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-    {{ 1.0f, -1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-1.0f,  1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-    {{ 1.0f,  1.0f, -1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 0.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+
+    {{ 0.0, 0.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
     // Left
-    {{-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    {{-1.0f, -1.0f,  1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-    {{-1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    {{-1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{-1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 0.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+
+    {{ 0.0, 0.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 0.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     // Right
-    {{ 1.0f, -1.0f,  1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    {{ 1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-    {{ 1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 1.0f, -1.0f,  1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
-    {{ 1.0f,  1.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 1.0f,  1.0f,  1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 1.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 1.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+
+    {{ 1.0, 0.0, 1.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     // Top
-    {{-1.0f,  1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-    {{ 1.0f,  1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-    {{ 1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{-1.0f,  1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-    {{ 1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{-1.0f,  1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    // Bottom 
-    {{-1.0f, -1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-    {{ 1.0f, -1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-    {{ 1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{-1.0f, -1.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-    {{ 1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{-1.0f, -1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 0.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 0.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+
+    {{ 0.0, 0.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 0.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    // Bottom
+    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 0.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+
+    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 1.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+};
+
+const std::vector<Vertex> pyramidVertices = {
+    // Front
+    {{ 0.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.5, 0.0, 0.5}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    // Back
+    {{ 1.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.5, 0.0, 0.5}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    // Left
+    {{ 0.0, 1.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0, 1.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.5, 0.0, 0.5}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    // Right
+    {{ 1.0, 1.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0, 1.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.5, 0.0, 0.5}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    // Bottom
+    {{ 0.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0f, 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0f, 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 1.0f, 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+};
+
+const std::vector<Vertex> xAxisVertices = {
+    {{ 0.0f,                   0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ constants::AXES_LENGTH, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+};
+
+const std::vector<Vertex> yAxisVertices = {
+    {{ 0.0f, 0.0f,                   0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0f,-constants::AXES_LENGTH, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+};
+
+const std::vector<Vertex> zAxisVertices = {
+    {{ 0.0f, 0.0f,                   0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0f, 0.0f, constants::AXES_LENGTH}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
 };
 
 void VulkanRenderer::framebufferResizeCallback(GLFWwindow* window, int width, int height) 
@@ -188,9 +235,12 @@ void VulkanRenderer::init()
     createDescriptorSetLayout();
 	PipelineCreateInfo cubePipelineInfo = { m_device, m_renderPass, m_descriptorSetLayout, m_msaaSamples };
 	PipelineCreateInfo vikingRoomPipelineInfo = { m_device, m_renderPass, m_descriptorSetLayout, m_msaaSamples };
+    PipelineCreateInfo linePipelineInfo = { m_device, m_renderPass, m_descriptorSetLayout, m_msaaSamples };
 	auto [cubePipeline, cubePipelineLayout] = CubePipeline(m_device).create(cubePipelineInfo);
     auto [pipeline, pipelineLayout] = VikingRoomPipeline(m_device).create(vikingRoomPipelineInfo);
+    auto [linePipeline, linePipelineLayout] = LinePipeline(m_device).create(linePipelineInfo);
 	m_materials["cube"] = Material(cubePipeline, cubePipelineLayout);
+	m_materials["line"] = Material(linePipeline, linePipelineLayout);
     m_materials["default"] = Material(pipeline, pipelineLayout);
     createCommandPool();
     createColorResources();
@@ -200,9 +250,21 @@ void VulkanRenderer::init()
     createTextureImage(m_textures[0], texturePath);
     createTextureImageView(m_textures[0].imageView, m_textures[0].image.image);
     createTextureSampler();
+    m_meshes.emplace("pyramid", Mesh(m_device));
+	m_meshes["pyramid"].fromVertices(pyramidVertices);
+	m_meshes["pyramid"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
 	m_meshes.emplace("cube", Mesh(m_device));
 	m_meshes["cube"].fromVertices(cubeVertices);
 	m_meshes["cube"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
+    m_meshes.emplace("xAxis", Mesh(m_device));
+    m_meshes["xAxis"].fromVertices(xAxisVertices);
+    m_meshes["xAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
+    m_meshes.emplace("yAxis", Mesh(m_device));
+    m_meshes["yAxis"].fromVertices(yAxisVertices);
+    m_meshes["yAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
+    m_meshes.emplace("zAxis", Mesh(m_device));
+    m_meshes["zAxis"].fromVertices(zAxisVertices);
+    m_meshes["zAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes.emplace("default", Mesh(m_device));
     //std::filesystem::path modelPath = constants::MODELS_PATH / "viking_room.obj";
     //std::filesystem::path modelPath2 = constants::MODELS_PATH / "bomba.obj";
@@ -210,11 +272,6 @@ void VulkanRenderer::init()
     //m_meshes["bomba"].loadFromObj(modelPath2);
     //m_meshes["default"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes["bomba"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
-    Renderable testRenderable;
-	Renderable testRenderable2;
-    testRenderable.mesh = getMesh("default");
-	testRenderable.material = getMaterial("default");
-    testRenderable.textureIdx = 0;
     //glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
     //testRenderable2.transformMatrix = glm::mat4(1.0f) * translationMatrix;
     m_renderableObjects.emplace_back(Renderable{
@@ -229,6 +286,30 @@ void VulkanRenderer::init()
 			.transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 6.0f))
         }
     );
+    m_renderableObjects.emplace_back(Renderable{
+        .mesh = getMesh("pyramid"),
+        .material = getMaterial("cube"),
+        .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 12.0f))
+        }
+    );
+    m_renderableObjects.emplace_back(Renderable{
+        .mesh = getMesh("xAxis"),
+        .material = getMaterial("line"),
+        .transformMatrix = glm::mat4(1.0f)
+        }
+    );
+    m_renderableObjects.emplace_back(Renderable{
+        .mesh = getMesh("yAxis"),
+        .material = getMaterial("line"),
+        .transformMatrix = glm::mat4(1.0f)
+        }
+    );
+    m_renderableObjects.emplace_back(Renderable{
+        .mesh = getMesh("zAxis"),
+        .material = getMaterial("line"),
+        .transformMatrix = glm::mat4(1.0f)
+        }
+    );
     //m_renderableObjects.emplace_back(testRenderable2);
     //createVertexBuffer();
     //createIndexBuffer();
@@ -237,6 +318,41 @@ void VulkanRenderer::init()
     createDescriptorSets();
     createCommandBuffers();
     createSyncObjects();
+    initImgui();
+}
+
+void VulkanRenderer::initImgui()
+{
+    VkDescriptorPoolSize poolSizes[] =
+    {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
+    };
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1;
+    poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(poolSizes);
+    poolInfo.pPoolSizes = poolSizes;
+
+    if (vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_imguiDescriptorPool) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForVulkan(m_window, true);
+    ImGui_ImplVulkan_InitInfo initInfo = {};
+    initInfo.Instance = m_instance;
+    initInfo.PhysicalDevice = m_physicalDevice;
+    initInfo.Device = m_device;
+    initInfo.Queue = m_graphicsQueue;
+    initInfo.DescriptorPool = m_imguiDescriptorPool;
+    initInfo.MinImageCount = static_cast<uint32_t>(m_swapChainImages.size());
+    initInfo.ImageCount = static_cast<uint32_t>(m_swapChainImages.size());
+	initInfo.RenderPass = m_renderPass;
+    initInfo.MSAASamples = m_msaaSamples;
+    initInfo.Allocator = nullptr;
+    ImGui_ImplVulkan_Init(&initInfo);
 }
 
 /*
@@ -895,9 +1011,9 @@ void VulkanRenderer::drawObjects(VkCommandBuffer& commandBuffer, Renderable* obj
         if (i == 1)
         {
             glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::vec4 pos_rot_h = rotation * glm::vec4(glm::vec3(0.0f, 0.0f, 6.0f) - glm::vec3(0.0f), 1.0f);
+            glm::vec4 pos_rot_h = rotation * glm::vec4(glm::vec3(0.0f, object.transformMatrix[3].y, 6.0f) - glm::vec3(0.0f), 1.0f);
             glm::vec3 pos_rot = glm::vec3(pos_rot_h) + glm::vec3(0.0f);
-            object.transformMatrix = glm::translate(glm::mat4(1.0f), pos_rot);
+            object.transformMatrix = glm::translate(glm::mat4(1.0f), pos_rot) * rotation;
         }
         vkCmdPushConstants(commandBuffer, object.material->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &(object.transformMatrix));
         if (object.textureIdx)
@@ -963,7 +1079,6 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    
     VkBuffer vertexBuffers[] = { m_renderableObjects[0].mesh->m_vertexBuffer};
     VkDeviceSize offsets[] = { 0 };
     //vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -973,6 +1088,11 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_renderableObjects[0].mesh->m_indices.size()), 1, 0, 0, 0);
     
 	drawObjects(commandBuffer, m_renderableObjects.data(), m_renderableObjects.size());
+
+    if (m_imguiDrawData[m_currentFrame])
+    {
+        ImGui_ImplVulkan_RenderDrawData(m_imguiDrawData[m_currentFrame], commandBuffer);
+    }
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -1743,6 +1863,11 @@ void VulkanRenderer::drawFrame()
     {
         m_framebufferResized = false;
         recreateSwapChain();
+        /*
+		int width, height;
+        glfwGetFramebufferSize(m_window, &width, &height);
+        ImGui_ImplVulkanH_CreateOrResizeWindow(m_instance, m_physicalDevice, m_device, &g_MainWindowData, g_QueueFamily, nullptr, width, height, m_swapChainImages.size());
+        */
     }
     else if (result != VK_SUCCESS) 
     {
@@ -1794,7 +1919,6 @@ Material* VulkanRenderer::getMaterial(const std::string& name)
     }
 }
 
-
 Mesh* VulkanRenderer::getMesh(const std::string& name)
 {
     auto it = m_meshes.find(name);
@@ -1806,4 +1930,9 @@ Mesh* VulkanRenderer::getMesh(const std::string& name)
     {
         return &(*it).second;
     }
+}
+
+void VulkanRenderer::recordImguiData(ImDrawData* data)
+{
+	m_imguiDrawData[m_currentFrame] = data;
 }
