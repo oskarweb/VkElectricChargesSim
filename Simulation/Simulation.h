@@ -2,23 +2,22 @@
 
 #include "VulkanRenderer.h"
 #include "Camera.h"
-
+#include "Input.h"
 
 class Simulation
 {
 public:
-	Simulation() {}
+	Simulation() : m_camera(Camera(glm::vec3(2.0f, 2.0f, 1.0f), 0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f)))
+	{}
 
 	void run()
 	{
 		initWindow();
+		Input::setWindow(m_window);
 		glfwSetWindowUserPointer(m_window, this);
 		m_renderer.setWindow(m_window);
-		m_camera = Camera(glm::vec3(2.0f, 2.0f, 1.0f), 0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
 		m_renderer.setCamera(&m_camera);
 		m_renderer.init();
-		glfwSetKeyCallback(m_window, keyCallback);
-		glfwSetCursorPosCallback(m_window, mouseCallback);
 		glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GLFW_TRUE);
 		glfwMakeContextCurrent(m_window);
 
@@ -26,6 +25,7 @@ public:
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; 
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 		ImGui::StyleColorsDark();
+		ImGui_ImplGlfw_CursorPosCallback(m_window, Input::mousePos.x, Input::mousePos.y);
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -42,7 +42,12 @@ public:
 				static float f = 0.0f;
 				static int counter = 0;
 
-				m_renderer.m_renderableObjects[1].transformMatrix = glm::translate(m_renderer.m_renderableObjects[1].transformMatrix, glm::vec3(0.0, f, 0));
+				for (auto& renderable : m_renderer.m_renderableObjects)
+				{
+					if (renderable.second.id == 1)
+						renderable.second.transformMatrix = glm::translate(renderable.second.transformMatrix, glm::vec3(0.0, f, 0));
+				}
+				//m_renderer.m_renderableObjects.equal_range["pyramidcube"][0].transformMatrix = glm::translate(m_renderer.m_renderableObjects[1].transformMatrix, glm::vec3(0.0, f, 0));
 				ImGui::SetNextWindowPos(ImVec2(0, 0));
 				ImGui::Begin("Options");
 				bool isHovered = ImGui::IsItemHovered();
@@ -63,6 +68,7 @@ public:
 
 			ImGui::Render();
 			m_renderer.recordImguiData(ImGui::GetDrawData());
+			//Input::process();
 		}
 
 		ImGui_ImplVulkan_Shutdown();
@@ -75,9 +81,6 @@ public:
 	}
 
 private:
-	static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
-	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-
 	void initWindow();
 
 	GLFWwindow* m_window = nullptr;

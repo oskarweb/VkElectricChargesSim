@@ -15,6 +15,7 @@
 
 struct Mesh
 {
+	std::string name = "default";
 	std::vector<Vertex> m_vertices;
 	std::vector<uint32_t> m_indices;
 	std::unordered_map<Vertex, uint32_t> m_uniqueVertices{};
@@ -96,7 +97,7 @@ struct Mesh
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
-		helpers::createBuffer(
+		Helpers::createBuffer(
 			m_deviceHandle,
 			physicalDevice,
 			bufferSize,
@@ -111,7 +112,7 @@ struct Mesh
 		memcpy(data, m_indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_deviceHandle, stagingBufferMemory);
 
-		helpers::createBuffer(
+		Helpers::createBuffer(
 			m_deviceHandle,
 			physicalDevice,
 			bufferSize,
@@ -121,7 +122,7 @@ struct Mesh
 			m_indexBufferMemory
 		);
 
-		helpers::copyBuffer(m_deviceHandle, graphicsQueue, commandPool, stagingBuffer, m_indexBuffer, bufferSize);
+		Helpers::copyBuffer(m_deviceHandle, graphicsQueue, commandPool, stagingBuffer, m_indexBuffer, bufferSize);
 
 		vkDestroyBuffer(m_deviceHandle, stagingBuffer, nullptr);
 		vkFreeMemory(m_deviceHandle, stagingBufferMemory, nullptr);
@@ -133,7 +134,7 @@ struct Mesh
 
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
-		helpers::createBuffer(
+		Helpers::createBuffer(
 			m_deviceHandle,
 			physicalDevice,
 			bufferSize,
@@ -148,7 +149,7 @@ struct Mesh
 		memcpy(data, m_vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_deviceHandle, stagingBufferMemory);
 
-		helpers::createBuffer(
+		Helpers::createBuffer(
 			m_deviceHandle,
 			physicalDevice,
 			bufferSize,
@@ -158,16 +159,14 @@ struct Mesh
 			m_vertexBufferMemory
 		);
 
-		helpers::copyBuffer(m_deviceHandle, graphicsQueue, commandPool, stagingBuffer, m_vertexBuffer, bufferSize);
+		Helpers::copyBuffer(m_deviceHandle, graphicsQueue, commandPool, stagingBuffer, m_vertexBuffer, bufferSize);
 
 		vkDestroyBuffer(m_deviceHandle, stagingBuffer, nullptr);
 		vkFreeMemory(m_deviceHandle, stagingBufferMemory, nullptr);
 	}
 
 	Mesh() = default;
-	Mesh(VkDevice device) {
-		m_deviceHandle = device;
-	}
+	Mesh(const std::string& name, VkDevice device) : name(name), m_deviceHandle(device) {}
 
 	void cleanup() {
 		if (m_indexBuffer != VK_NULL_HANDLE)

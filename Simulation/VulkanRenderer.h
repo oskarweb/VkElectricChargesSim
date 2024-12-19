@@ -24,67 +24,24 @@
 #include <filesystem>
 #include <utility>
 #include <memory>
+#include <set>
 
 #include "extras.h"
 #include "Camera.h"
 #include "Vertex.h"
 #include "Mesh.h"
 #include "PipelineFactory.h"
+#include "RendererStructs.h"
 
 
 //(constants::MODELS_PATH / "viking_room.obj").string().c_str()
 
-struct Material 
+struct RenderableComp
 {
-	VkPipeline pipeline;
-	VkPipelineLayout pipelineLayout;
-	
-	Material() : pipeline(VK_NULL_HANDLE), pipelineLayout(VK_NULL_HANDLE) {}
-	Material(VkPipeline pipeline, VkPipelineLayout pipelineLayout) : pipeline(pipeline), pipelineLayout(pipelineLayout) {}
-};
-
-struct Renderable 
-{
-	Mesh* mesh;
-	Material* material;
-	std::unique_ptr<int> textureIdx = nullptr;
-
-	glm::mat4 transformMatrix;
-};
-
-struct Image
-{
-	VkImage image;
-	VkDeviceMemory imageMemory;
-};
-
-struct Texture
-{
-	Image image;
-	VkImageView imageView;
-};
-
-struct QueueFamilyIndices
-{
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
-
-	bool isComplete()
+	bool operator()(const std::string& lhs, const std::string& rhs) const
 	{
-		return graphicsFamily.has_value() && presentFamily.has_value();
+		return lhs < rhs;
 	}
-};
-
-struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
-
-struct CameraBuffer {
-	//alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
 };
 
 class VulkanRenderer 
@@ -106,9 +63,12 @@ public:
 	void init();
 	void drawFrame();
 	void recordImguiData(ImDrawData* data);
+	Material* getMaterial(const std::string& name);
+	Mesh* getMesh(const std::string& name);
+	void addRenderable(Renderable renderable);
 	void cleanup();
 
-	std::vector<Renderable> m_renderableObjects;
+	std::multimap<std::string, Renderable, RenderableComp> m_renderableObjects;
 private:
 	void initImgui();
 	void mainLoop();
@@ -164,12 +124,11 @@ private:
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 	//void createMaterial(VkPipeline pipeline, VkPipelineLayout layout, const std::string& name);
-	Material* getMaterial(const std::string& name);
-	Mesh* getMesh(const std::string& name);
-	void drawObjects(VkCommandBuffer& commandBuffer, Renderable* objects, size_t count);
+	void drawObjects(VkCommandBuffer& commandBuffer);
 
 	//VARS
 	//std::vector<Renderable> m_renderableObjects;
+	uint64_t m_currentRenderableId = 0;
 	std::unordered_map<std::string, Mesh> m_meshes;
 	std::unordered_map<std::string, Material> m_materials;
 	std::vector<Texture> m_textures;
