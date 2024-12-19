@@ -106,17 +106,17 @@ const std::vector<Vertex> pyramidVertices = {
 
 const std::vector<Vertex> xAxisVertices = {
     {{ 0.0f,                   0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ constants::AXES_LENGTH, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ Constants::AXES_LENGTH, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
 const std::vector<Vertex> yAxisVertices = {
     {{ 0.0f, 0.0f,                   0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0f,-constants::AXES_LENGTH, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.0f, Constants::AXES_LENGTH, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
 const std::vector<Vertex> zAxisVertices = {
     {{ 0.0f, 0.0f,                   0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0f, 0.0f, constants::AXES_LENGTH}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    {{ 0.0f, 0.0f, Constants::AXES_LENGTH}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
 };
 
 void VulkanRenderer::framebufferResizeCallback(GLFWwindow* window, int width, int height) 
@@ -223,7 +223,7 @@ VkFormat VulkanRenderer::findDepthFormat()
 
 void VulkanRenderer::init()
 {
-    m_textures.resize(constants::TEXTURE_COUNT);
+    m_textures.resize(Constants::TEXTURE_COUNT);
     createInstance();
     setupDebugMessenger();
     createSurface();
@@ -236,80 +236,74 @@ void VulkanRenderer::init()
 	PipelineCreateInfo cubePipelineInfo = { m_device, m_renderPass, m_descriptorSetLayout, m_msaaSamples };
 	PipelineCreateInfo vikingRoomPipelineInfo = { m_device, m_renderPass, m_descriptorSetLayout, m_msaaSamples };
     PipelineCreateInfo linePipelineInfo = { m_device, m_renderPass, m_descriptorSetLayout, m_msaaSamples };
-	auto [cubePipeline, cubePipelineLayout] = CubePipeline(m_device).create(cubePipelineInfo);
-    auto [pipeline, pipelineLayout] = VikingRoomPipeline(m_device).create(vikingRoomPipelineInfo);
-    auto [linePipeline, linePipelineLayout] = LinePipeline(m_device).create(linePipelineInfo);
-	m_materials["cube"] = Material(cubePipeline, cubePipelineLayout);
-	m_materials["line"] = Material(linePipeline, linePipelineLayout);
-    m_materials["default"] = Material(pipeline, pipelineLayout);
+	auto [cubePipeline, cubePipelineLayout] = CubePipeline(m_device, m_physicalDevice).create(cubePipelineInfo);
+    auto [pipeline, pipelineLayout] = VikingRoomPipeline(m_device, m_physicalDevice).create(vikingRoomPipelineInfo);
+    auto [linePipeline, linePipelineLayout] = LinePipeline(m_device, m_physicalDevice).create(linePipelineInfo);
+	m_materials["cube"] = Material("cube", cubePipeline, cubePipelineLayout);
+	m_materials["line"] = Material("line", linePipeline, linePipelineLayout);
+    m_materials["default"] = Material("default", pipeline, pipelineLayout);
     createCommandPool();
     createColorResources();
     createDepthResources();
     createFramebuffers();
-	std::filesystem::path texturePath = constants::TEXTURES_PATH / "viking_room.png";
+	std::filesystem::path texturePath = Constants::TEXTURES_PATH / "viking_room.png";
     createTextureImage(m_textures[0], texturePath);
     createTextureImageView(m_textures[0].imageView, m_textures[0].image.image);
     createTextureSampler();
-    m_meshes.emplace("pyramid", Mesh(m_device));
+    m_meshes.emplace("pyramid", Mesh("pyramid", m_device));
 	m_meshes["pyramid"].fromVertices(pyramidVertices);
 	m_meshes["pyramid"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
-	m_meshes.emplace("cube", Mesh(m_device));
+	m_meshes.emplace("cube", Mesh("cube", m_device));
 	m_meshes["cube"].fromVertices(cubeVertices);
 	m_meshes["cube"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
-    m_meshes.emplace("xAxis", Mesh(m_device));
+    m_meshes.emplace("xAxis", Mesh("xAxis", m_device));
     m_meshes["xAxis"].fromVertices(xAxisVertices);
     m_meshes["xAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
-    m_meshes.emplace("yAxis", Mesh(m_device));
+    m_meshes.emplace("yAxis", Mesh("yAxis", m_device));
     m_meshes["yAxis"].fromVertices(yAxisVertices);
     m_meshes["yAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
-    m_meshes.emplace("zAxis", Mesh(m_device));
+    m_meshes.emplace("zAxis", Mesh("zAxis", m_device));
     m_meshes["zAxis"].fromVertices(zAxisVertices);
     m_meshes["zAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes.emplace("default", Mesh(m_device));
-    //std::filesystem::path modelPath = constants::MODELS_PATH / "viking_room.obj";
-    //std::filesystem::path modelPath2 = constants::MODELS_PATH / "bomba.obj";
+    //std::filesystem::path modelPath = Constants::MODELS_PATH / "viking_room.obj";
+    //std::filesystem::path modelPath2 = Constants::MODELS_PATH / "bomba.obj";
     //m_meshes["default"].loadFromObj(modelPath);
     //m_meshes["bomba"].loadFromObj(modelPath2);
     //m_meshes["default"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes["bomba"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
     //testRenderable2.transformMatrix = glm::mat4(1.0f) * translationMatrix;
-    m_renderableObjects.emplace_back(Renderable{
-			.mesh = getMesh("cube"),
-			.material = getMaterial("cube"),
-			.transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 2.0f, 1.0f))
-        }
-    );
-    m_renderableObjects.emplace_back(Renderable{
+    addRenderable(Renderable{
             .mesh = getMesh("cube"),
             .material = getMaterial("cube"),
-			.transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 6.0f))
-        }
-    );
-    m_renderableObjects.emplace_back(Renderable{
+            .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 2.0f, 1.0f)) 
+    });
+    addRenderable(Renderable{
+            .mesh = getMesh("cube"),
+            .material = getMaterial("cube"),
+            .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 6.0f))
+    });
+    addRenderable(Renderable{
         .mesh = getMesh("pyramid"),
         .material = getMaterial("cube"),
         .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 12.0f))
-        }
-    );
-    m_renderableObjects.emplace_back(Renderable{
+    });
+    addRenderable(Renderable{
         .mesh = getMesh("xAxis"),
         .material = getMaterial("line"),
         .transformMatrix = glm::mat4(1.0f)
-        }
-    );
-    m_renderableObjects.emplace_back(Renderable{
+    });
+    addRenderable(Renderable{
         .mesh = getMesh("yAxis"),
         .material = getMaterial("line"),
         .transformMatrix = glm::mat4(1.0f)
-        }
-    );
-    m_renderableObjects.emplace_back(Renderable{
+    });
+    addRenderable(Renderable{
         .mesh = getMesh("zAxis"),
         .material = getMaterial("line"),
         .transformMatrix = glm::mat4(1.0f)
-        }
-    );
+    });
     //m_renderableObjects.emplace_back(testRenderable2);
     //createVertexBuffer();
     //createIndexBuffer();
@@ -363,7 +357,7 @@ void VulkanRenderer::loadModel()
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, (constants::MODELS_PATH / "viking_room.obj").string().c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, (Constants::MODELS_PATH / "viking_room.obj").string().c_str()))
     {
         throw std::runtime_error(warn + err);
     }
@@ -452,7 +446,7 @@ void VulkanRenderer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
 
-    VkCommandBuffer commandBuffer = helpers::beginSingleTimeCommands(m_device, m_commandPool);
+    VkCommandBuffer commandBuffer = Helpers::beginSingleTimeCommands(m_device, m_commandPool);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -535,7 +529,7 @@ void VulkanRenderer::generateMipmaps(VkImage image, VkFormat imageFormat, int32_
         1, &barrier
     );
 
-    helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
+    Helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
 }
 
 void VulkanRenderer::createTextureImage(Texture& texture, std::filesystem::path& path) {
@@ -551,7 +545,7 @@ void VulkanRenderer::createTextureImage(Texture& texture, std::filesystem::path&
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    helpers::createBuffer(
+    Helpers::createBuffer(
         m_device,
         m_physicalDevice,
         imageSize,
@@ -674,7 +668,7 @@ void VulkanRenderer::createImage(uint32_t width, uint32_t height, uint32_t mipLe
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = helpers::findMemoryType(m_physicalDevice, memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = Helpers::findMemoryType(m_physicalDevice, memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(m_device, &allocInfo, nullptr, &image.imageMemory) != VK_SUCCESS)
     {
@@ -686,7 +680,7 @@ void VulkanRenderer::createImage(uint32_t width, uint32_t height, uint32_t mipLe
 
 void VulkanRenderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
 {
-    VkCommandBuffer commandBuffer = helpers::beginSingleTimeCommands(m_device, m_commandPool);
+    VkCommandBuffer commandBuffer = Helpers::beginSingleTimeCommands(m_device, m_commandPool);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -734,7 +728,7 @@ void VulkanRenderer::transitionImageLayout(VkImage image, VkFormat format, VkIma
         1, &barrier
     );
 
-    helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
+    Helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
 }
 
 void VulkanRenderer::createUniformBuffers()
@@ -747,7 +741,7 @@ void VulkanRenderer::createUniformBuffers()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        helpers::createBuffer(
+        Helpers::createBuffer(
             m_device,
             m_physicalDevice, 
             bufferSize, 
@@ -780,9 +774,9 @@ void VulkanRenderer::createDescriptorSets() {
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(CameraBuffer);
 
-        VkDescriptorImageInfo imageInfos[constants::TEXTURE_COUNT];
+        VkDescriptorImageInfo imageInfos[Constants::TEXTURE_COUNT];
 
-        for (uint32_t i = 0; i < constants::TEXTURE_COUNT; ++i)
+        for (uint32_t i = 0; i < Constants::TEXTURE_COUNT; ++i)
         {
             imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfos[i].imageView = m_textures[i].imageView;
@@ -811,7 +805,7 @@ void VulkanRenderer::createDescriptorSets() {
         descriptorWrites[2].dstBinding = 2;
         descriptorWrites[2].dstArrayElement = 0;
         descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        descriptorWrites[2].descriptorCount = constants::TEXTURE_COUNT;
+        descriptorWrites[2].descriptorCount = Constants::TEXTURE_COUNT;
         descriptorWrites[2].pImageInfo = imageInfos;
 
         vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -826,7 +820,7 @@ void VulkanRenderer::createDescriptorPool()
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     poolSizes[2].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    poolSizes[2].descriptorCount = static_cast<uint32_t>(constants::TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT);
+    poolSizes[2].descriptorCount = static_cast<uint32_t>(Constants::TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT);
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -857,7 +851,7 @@ void VulkanRenderer::createDescriptorSetLayout()
     
     VkDescriptorSetLayoutBinding textureLayoutBinding{};
     textureLayoutBinding.binding = 2;
-    textureLayoutBinding.descriptorCount = constants::TEXTURE_COUNT;
+    textureLayoutBinding.descriptorCount = Constants::TEXTURE_COUNT;
     textureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     textureLayoutBinding.pImmutableSamplers = nullptr;
     textureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -875,13 +869,13 @@ void VulkanRenderer::createDescriptorSetLayout()
 }
 
 void VulkanRenderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = helpers::beginSingleTimeCommands(m_device, m_commandPool);
+    VkCommandBuffer commandBuffer = Helpers::beginSingleTimeCommands(m_device, m_commandPool);
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
+    Helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
 }
 
 /*
@@ -892,7 +886,7 @@ void VulkanRenderer::createIndexBuffer()
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    helpers::createBuffer(
+    Helpers::createBuffer(
         m_device,
         m_physicalDevice,
         bufferSize,
@@ -907,7 +901,7 @@ void VulkanRenderer::createIndexBuffer()
     memcpy(data, m_indices.data(), (size_t)bufferSize);
     vkUnmapMemory(m_device, stagingBufferMemory);
 
-    helpers::createBuffer(
+    Helpers::createBuffer(
         m_device, 
         m_physicalDevice, 
         bufferSize, 
@@ -929,14 +923,14 @@ void VulkanRenderer::createVertexBuffer()
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    helpers::createBuffer(m_device, m_physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    Helpers::createBuffer(m_device, m_physicalDevice, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, m_vertices.data(), (size_t)bufferSize);
     vkUnmapMemory(m_device, stagingBufferMemory);
 
-    helpers::createBuffer(
+    Helpers::createBuffer(
         m_device,
         m_physicalDevice,
         bufferSize,
@@ -991,7 +985,7 @@ void VulkanRenderer::createCommandBuffers()
     }
 }
 
-void VulkanRenderer::drawObjects(VkCommandBuffer& commandBuffer, Renderable* objects, size_t count)
+void VulkanRenderer::drawObjects(VkCommandBuffer& commandBuffer)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -999,16 +993,15 @@ void VulkanRenderer::drawObjects(VkCommandBuffer& commandBuffer, Renderable* obj
 
     Mesh* lastMesh = nullptr;
     Material* lastMaterial = nullptr;
-    for (int i = 0; i < count; i++)
+    for (auto& [name, object] : m_renderableObjects)
     {
-        Renderable& object = objects[i];
-
+		//std::cout << object.material->name << object.mesh->name << std::endl;
         if (object.material != lastMaterial) 
         {
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipeline);
             lastMaterial = object.material;
         }
-        if (i == 1)
+        if (object.id == 1)
         {
             glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             glm::vec4 pos_rot_h = rotation * glm::vec4(glm::vec3(0.0f, object.transformMatrix[3].y, 6.0f) - glm::vec3(0.0f), 1.0f);
@@ -1079,7 +1072,6 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = { m_renderableObjects[0].mesh->m_vertexBuffer};
     VkDeviceSize offsets[] = { 0 };
     //vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     //vkCmdBindIndexBuffer(commandBuffer, m_renderableObjects[0].mesh->m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
@@ -1087,7 +1079,7 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
     //vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_renderableObjects[0].mesh->m_indices.size()), 1, 0, 0, 0);
     
-	drawObjects(commandBuffer, m_renderableObjects.data(), m_renderableObjects.size());
+	drawObjects(commandBuffer);
 
     if (m_imguiDrawData[m_currentFrame])
     {
@@ -1104,7 +1096,7 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
 void VulkanRenderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
 {
-    VkCommandBuffer commandBuffer = helpers::beginSingleTimeCommands(m_device, m_commandPool);
+    VkCommandBuffer commandBuffer = Helpers::beginSingleTimeCommands(m_device, m_commandPool);
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -1123,7 +1115,7 @@ void VulkanRenderer::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t 
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
+    Helpers::endSingleTimeCommands(m_device, m_graphicsQueue, m_commandPool, commandBuffer);
 }
 
 void VulkanRenderer::createCommandPool()
@@ -1478,6 +1470,7 @@ void VulkanRenderer::createLogicalDevice()
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
+    deviceFeatures.wideLines = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1489,8 +1482,8 @@ void VulkanRenderer::createLogicalDevice()
 
     if (enableValidationLayers)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(constants::validationLayers.size());
-        createInfo.ppEnabledLayerNames = constants::validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(Constants::validationLayers.size());
+        createInfo.ppEnabledLayerNames = Constants::validationLayers.data();
     }
     else
     {
@@ -1541,7 +1534,7 @@ bool VulkanRenderer::isDeviceSuitable(VkPhysicalDevice device)
     VkPhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-    return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+    return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy && supportedFeatures.wideLines;
 }
 
 bool VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
@@ -1601,8 +1594,8 @@ void VulkanRenderer::createInstance()
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (enableValidationLayers)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(constants::validationLayers.size());
-        createInfo.ppEnabledLayerNames = constants::validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(Constants::validationLayers.size());
+        createInfo.ppEnabledLayerNames = Constants::validationLayers.data();
         populateDebugMessengerCreateInfo(debugCreateInfo);
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
     }
@@ -1678,7 +1671,7 @@ bool VulkanRenderer::checkValidationLayerSupport()
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char* layerName : constants::validationLayers)
+    for (const char* layerName : Constants::validationLayers)
     {
         bool layerFound = false;
         for (const auto& layerProperties : availableLayers)
@@ -1880,8 +1873,6 @@ void VulkanRenderer::drawFrame()
 void VulkanRenderer::updateUniformBuffer(uint32_t currentImage)
 {
     //static auto startTime = std::chrono::high_resolution_clock::now();
-	m_cameraPtr->update();
-
     //auto currentTime = std::chrono::high_resolution_clock::now();
     //float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
@@ -1935,4 +1926,11 @@ Mesh* VulkanRenderer::getMesh(const std::string& name)
 void VulkanRenderer::recordImguiData(ImDrawData* data)
 {
 	m_imguiDrawData[m_currentFrame] = data;
+}
+
+void VulkanRenderer::addRenderable(Renderable obj)
+{
+	obj.id = m_currentRenderableId;
+    m_renderableObjects.insert(std::pair{ (obj.mesh->name + obj.material->name), std::move(obj) });
+	m_currentRenderableId++;
 }

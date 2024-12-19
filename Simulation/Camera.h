@@ -11,6 +11,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "Input.h"
+
 class Camera {
 public:
     Camera() : m_position(glm::vec3(0.0f, 0.0f, 0.0f)), m_pitch(0.0f), m_yaw(0.0f)
@@ -45,13 +47,31 @@ public:
     void setVelocityX(float&& velocityX) { m_velocity.x = velocityX; }
     void setVelocityY(float&& velocityY) { m_velocity.y = velocityY; }
     void setVelocityZ(float&& velocityZ) { m_velocity.z = velocityZ; }
-    void setPitch(float pitch) { m_pitch = pitch; update(); }
-    void setYaw(float yaw) { m_yaw = yaw; update(); }
+    void setPitch(float pitch) { m_pitch = pitch; }
+    void setYaw(float yaw) { m_yaw = yaw; }
 	bool locked() const { return m_locked; }
 	void lock(bool locked) { m_locked = locked; }
 	const float& getMaxVelocity() const { return m_maxVelocity; }
 
-    void processMouseInput(double xpos, double ypos)
+    void processKeyboardInput()
+    {
+        if (Input::isPressed(GLFW_KEY_W) && !Input::isPressed(GLFW_KEY_S)) 
+            { m_velocity.z = m_maxVelocity; }
+        else if (Input::isPressed(GLFW_KEY_S) && !Input::isPressed(GLFW_KEY_W)) 
+            { m_velocity.z = -m_maxVelocity; }
+        else { m_velocity.z = 0.0f; }
+
+        if (Input::isPressed(GLFW_KEY_A) && !Input::isPressed(GLFW_KEY_D)) 
+            { m_velocity.x = -m_maxVelocity; }
+        else if (Input::isPressed(GLFW_KEY_D) && !Input::isPressed(GLFW_KEY_A)) 
+            { m_velocity.x = m_maxVelocity; }
+		else 
+            { m_velocity.x = 0.0f; }
+
+        if (Input::isJustPressed(GLFW_KEY_C)) { m_locked = !m_locked; }
+    }
+
+    void processMouseInput()
     {
         
 		if (m_locked)
@@ -59,10 +79,10 @@ public:
 			return;
 		}
         
-        float xoffset = xpos - m_lastX;
-        float yoffset = m_lastY - ypos;
-        m_lastX = xpos;
-        m_lastY = ypos;
+        float xoffset = Input::getMousePos().x - m_lastX;
+        float yoffset = m_lastY - Input::getMousePos().y;
+        m_lastX = Input::getMousePos().x;
+        m_lastY = Input::getMousePos().y;
 
         xoffset *= m_sensitivity;
         yoffset *= m_sensitivity;
@@ -77,6 +97,8 @@ public:
 
     void update()
     {
+		processKeyboardInput();
+		processMouseInput();
         glm::mat4 cameraRotation = getRotationMatrix();
         m_position += glm::vec3(cameraRotation * glm::vec4(m_velocity * 0.5f, 0.f));
     }
@@ -95,7 +117,7 @@ private:
     glm::vec3 m_target = glm::vec3(0.0f, 0.0f, 0.0f);
     float m_pitch{ 0.f };
     float m_yaw{ 0.f };
-	float m_maxVelocity{ 0.05f };
+	const float m_maxVelocity{ 0.05f };
 	double m_lastX{ 0.0 };
 	double m_lastY{ 0.0 };
     float m_sensitivity = 0.01f;

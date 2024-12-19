@@ -2,13 +2,17 @@
 
 #include <GLFW/glfw3.h>
 
+#include <vulkan/vulkan.h>
+
+#include <glm/glm.hpp>
+
 #include <fstream>
 #include <cstdint>
 #include <vector>
 #include <filesystem>
-#include <unordered_map>
+#include <map>
 
-namespace constants
+namespace Constants
 {
 	constexpr uint32_t WIDTH = 800;
 	constexpr uint32_t HEIGHT = 600;
@@ -23,17 +27,9 @@ namespace constants
 	const std::filesystem::path SHADERS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\shaders";
 	const std::filesystem::path TEXTURES_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\textures";
 	const std::filesystem::path MODELS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\models";
-
-	const std::unordered_map <int, glm::vec3> KEY_DIRECTION =
-	{
-		{GLFW_KEY_W, glm::vec3(0.f, 0.f, +1.f)},
-		{GLFW_KEY_S, glm::vec3(0.f, 0.f, -1.f)},
-		{GLFW_KEY_A, glm::vec3(-1.f, 0.f, 0.f)},
-		{GLFW_KEY_D, glm::vec3(+1.f, 0.f, 0.f)}
-	};
 }
 
-namespace helpers
+namespace Helpers
 {
     inline std::vector<char> readFile(const std::filesystem::path& filepath)
     {

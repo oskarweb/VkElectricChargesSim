@@ -22,8 +22,9 @@ class PipelineFactory
 {
 protected:
 	VkDevice& m_device;
+	VkPhysicalDevice& m_physicalDevice;
 public:
-	PipelineFactory(VkDevice& device) : m_device(device) {}
+	PipelineFactory(VkDevice& device, VkPhysicalDevice& physicalDevice) : m_device(device), m_physicalDevice(physicalDevice) {}
     virtual std::pair<VkPipeline, VkPipelineLayout> create(PipelineCreateInfo info) = 0;
 
 };
@@ -33,14 +34,14 @@ class VikingRoomPipeline : PipelineFactory
 public:
 	using PipelineFactory::PipelineFactory;
 private:
-    std::filesystem::path vertPath = constants::SHADERS_PATH / "viking_room_vert.spv";
-    std::filesystem::path fragPath = constants::SHADERS_PATH / "viking_room_frag.spv";
+    std::filesystem::path vertPath = Constants::SHADERS_PATH / "viking_room_vert.spv";
+    std::filesystem::path fragPath = Constants::SHADERS_PATH / "viking_room_frag.spv";
 	std::unordered_map<std::string, VkShaderModule> m_shaders;
     
     void loadShaders() 
     {
-		m_shaders["vert"] = helpers::createShaderModule(m_device, helpers::readFile(vertPath));
-        m_shaders["frag"] = helpers::createShaderModule(m_device, helpers::readFile(fragPath));
+		m_shaders["vert"] = Helpers::createShaderModule(m_device, Helpers::readFile(vertPath));
+        m_shaders["frag"] = Helpers::createShaderModule(m_device, Helpers::readFile(fragPath));
     }
 
 public:
@@ -199,14 +200,14 @@ class CubePipeline : PipelineFactory
 public:
     using PipelineFactory::PipelineFactory;
 private:
-    std::filesystem::path vertPath = constants::SHADERS_PATH / "cube_vert.spv";
-    std::filesystem::path fragPath = constants::SHADERS_PATH / "cube_frag.spv";
+    std::filesystem::path vertPath = Constants::SHADERS_PATH / "cube_vert.spv";
+    std::filesystem::path fragPath = Constants::SHADERS_PATH / "cube_frag.spv";
     std::unordered_map<std::string, VkShaderModule> m_shaders;
 
     void loadShaders()
     {
-        m_shaders["vert"] = helpers::createShaderModule(m_device, helpers::readFile(vertPath));
-        m_shaders["frag"] = helpers::createShaderModule(m_device, helpers::readFile(fragPath));
+        m_shaders["vert"] = Helpers::createShaderModule(m_device, Helpers::readFile(vertPath));
+        m_shaders["frag"] = Helpers::createShaderModule(m_device, Helpers::readFile(fragPath));
     }
 
 public:
@@ -365,19 +366,21 @@ class LinePipeline : PipelineFactory
 public:
     using PipelineFactory::PipelineFactory;
 private:
-    std::filesystem::path vertPath = constants::SHADERS_PATH / "cube_vert.spv";
-    std::filesystem::path fragPath = constants::SHADERS_PATH / "cube_frag.spv";
+    std::filesystem::path vertPath = Constants::SHADERS_PATH / "cube_vert.spv";
+    std::filesystem::path fragPath = Constants::SHADERS_PATH / "cube_frag.spv";
     std::unordered_map<std::string, VkShaderModule> m_shaders;
 
     void loadShaders()
     {
-        m_shaders["vert"] = helpers::createShaderModule(m_device, helpers::readFile(vertPath));
-        m_shaders["frag"] = helpers::createShaderModule(m_device, helpers::readFile(fragPath));
+        m_shaders["vert"] = Helpers::createShaderModule(m_device, Helpers::readFile(vertPath));
+        m_shaders["frag"] = Helpers::createShaderModule(m_device, Helpers::readFile(fragPath));
     }
 
 public:
     std::pair<VkPipeline, VkPipelineLayout> create(PipelineCreateInfo info) override
     {
+        VkPhysicalDeviceFeatures physicalDeviceFeatures;
+        vkGetPhysicalDeviceFeatures(m_physicalDevice, &physicalDeviceFeatures);
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
         loadShaders();
@@ -408,7 +411,7 @@ public:
 
         std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
+            VK_DYNAMIC_STATE_SCISSOR,
         };
 
         VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -426,12 +429,20 @@ public:
         viewportState.viewportCount = 1;
         viewportState.scissorCount = 1;
 
+
         VkPipelineRasterizationStateCreateInfo rasterizer{};
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = 2.0f;
+        if (physicalDeviceFeatures.wideLines == VK_TRUE)
+        {
+            rasterizer.lineWidth = 2.0f;
+        }
+        else
+        {
+            rasterizer.lineWidth = 1.0f;
+        }
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;

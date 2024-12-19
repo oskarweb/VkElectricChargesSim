@@ -16,6 +16,10 @@ add_executable (Simulation
     "PipelineFactory.h"
     "Vertex.h" 
     "Mesh.h"
+    "Particle.cpp"
+    "Particle.h"
+    "RendererStructs.h"
+    "Input.h"
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
