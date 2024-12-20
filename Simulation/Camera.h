@@ -92,7 +92,7 @@ public:
 
 		m_pitch = std::clamp(m_pitch, glm::radians(-89.0f), glm::radians(89.0f));
         //std::cout << "x: " << xpos << "y: " << ypos << '\n';
-		std::cout << "pitch: " << m_pitch << " yaw: " << m_yaw << std::endl;
+		//std::cout << "pitch: " << m_pitch << " yaw: " << m_yaw << std::endl;
     }
 
     void update()

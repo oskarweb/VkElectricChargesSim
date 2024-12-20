@@ -1,8 +1,11 @@
 #include "Simulation.h"
-
+#include "VulkanRenderer.h"
+#include "Node.h"
 
 int main() {
-    Simulation app;
+	VulkanRenderer renderer;
+	Node::setRenderer(&renderer);
+    Simulation app(renderer);
 
     try
     {

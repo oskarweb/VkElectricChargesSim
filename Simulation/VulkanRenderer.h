@@ -26,25 +26,20 @@
 #include <memory>
 #include <set>
 
+
+#include "Renderer.h"
 #include "extras.h"
 #include "Camera.h"
 #include "Vertex.h"
 #include "Mesh.h"
 #include "PipelineFactory.h"
 #include "RendererStructs.h"
+#include "Models.h"
 
 
 //(constants::MODELS_PATH / "viking_room.obj").string().c_str()
 
-struct RenderableComp
-{
-	bool operator()(const std::string& lhs, const std::string& rhs) const
-	{
-		return lhs < rhs;
-	}
-};
-
-class VulkanRenderer 
+class VulkanRenderer : public Renderer
 {
 public:
 	const static int MAX_FRAMES_IN_FLIGHT = 2;
@@ -65,7 +60,9 @@ public:
 	void recordImguiData(ImDrawData* data);
 	Material* getMaterial(const std::string& name);
 	Mesh* getMesh(const std::string& name);
-	void addRenderable(Renderable renderable);
+	std::multimap<std::string, Renderable, RenderableComp>::iterator addRenderable(Renderable renderable) override;
+	void addRenderables(Model& model) override;
+	void removeRenderable(std::multimap<std::string, Renderable, RenderableComp>::iterator& it) override;
 	void cleanup();
 
 	std::multimap<std::string, Renderable, RenderableComp> m_renderableObjects;

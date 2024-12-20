@@ -30,7 +30,7 @@ public:
 	};
 
 	inline static Point mousePos = { 0.0, 0.0 };
-	inline static GLFWwindow* windowHandle;
+	inline static GLFWwindow* windowHandle = nullptr;
 
 	inline static void setWindow(GLFWwindow* window)
 	{
