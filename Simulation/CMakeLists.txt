@@ -20,7 +20,9 @@ add_executable (Simulation
     "Particle.h"
     "RendererStructs.h"
     "Input.h"
-)
+    "Models.h" 
+    "Node.h"
+ "Renderer.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Simulation PROPERTY CXX_STANDARD 20)

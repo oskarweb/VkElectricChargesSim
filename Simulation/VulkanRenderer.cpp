@@ -27,98 +27,6 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
-const std::vector<Vertex> cubeVertices = {
-    // Front
-    {{ 0.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 0.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-
-    {{ 0.0, 0.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    // Back
-    {{ 1.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 0.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-
-    {{ 0.0, 0.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    // Left
-    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 1.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 0.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-
-    {{ 0.0, 0.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 0.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    // Right
-    {{ 1.0, 1.0, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 1.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 1.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-
-    {{ 1.0, 0.0, 1.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    // Top
-    {{ 0.0, 0.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 0.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-
-    {{ 0.0, 0.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 0.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    // Bottom
-    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 0.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 1.0, 0.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-
-    {{ 0.0, 1.0, 1.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 1.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 0.0}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-};
-
-const std::vector<Vertex> pyramidVertices = {
-    // Front
-    {{ 0.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 0.0}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5, 0.0, 0.5}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    // Back
-    {{ 1.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 1.0, 1.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.5, 0.0, 0.5}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    // Left
-    {{ 0.0, 1.0, 1.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0, 1.0, 0.0}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.5, 0.0, 0.5}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    // Right
-    {{ 1.0, 1.0, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0, 1.0, 1.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5, 0.0, 0.5}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    // Bottom
-    {{ 0.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0f, 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0f, 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 1.0f, 1.0f,  1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-};
-
-const std::vector<Vertex> xAxisVertices = {
-    {{ 0.0f,                   0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ Constants::AXES_LENGTH, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-};
-
-const std::vector<Vertex> yAxisVertices = {
-    {{ 0.0f, 0.0f,                   0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.0f, Constants::AXES_LENGTH, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-};
-
-const std::vector<Vertex> zAxisVertices = {
-    {{ 0.0f, 0.0f,                   0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    {{ 0.0f, 0.0f, Constants::AXES_LENGTH}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-};
-
 void VulkanRenderer::framebufferResizeCallback(GLFWwindow* window, int width, int height) 
 {
     auto app = reinterpret_cast<VulkanRenderer*>(glfwGetWindowUserPointer(window));
@@ -265,6 +173,9 @@ void VulkanRenderer::init()
     m_meshes.emplace("zAxis", Mesh("zAxis", m_device));
     m_meshes["zAxis"].fromVertices(zAxisVertices);
     m_meshes["zAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
+	m_meshes.emplace("line", Mesh("line", m_device));
+    m_meshes["line"].fromVertices(lineVertices);
+	m_meshes["line"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes.emplace("default", Mesh(m_device));
     //std::filesystem::path modelPath = Constants::MODELS_PATH / "viking_room.obj";
     //std::filesystem::path modelPath2 = Constants::MODELS_PATH / "bomba.obj";
@@ -1928,9 +1839,28 @@ void VulkanRenderer::recordImguiData(ImDrawData* data)
 	m_imguiDrawData[m_currentFrame] = data;
 }
 
-void VulkanRenderer::addRenderable(Renderable obj)
+std::multimap<std::string, Renderable, RenderableComp>::iterator VulkanRenderer::addRenderable(Renderable obj)
 {
 	obj.id = m_currentRenderableId;
-    m_renderableObjects.insert(std::pair{ (obj.mesh->name + obj.material->name), std::move(obj) });
-	m_currentRenderableId++;
+    m_currentRenderableId++;
+    return m_renderableObjects.insert(std::pair{ (obj.mesh->name + obj.material->name), std::move(obj) });
+}
+
+void VulkanRenderer::addRenderables(Model& model)
+{
+    for (RenderableInfo& info : model.renderableInfos)
+    {
+		model.renderables.emplace(info.renderableName, addRenderable(Renderable
+            {
+                .mesh = getMesh(info.meshName),
+                .material = getMaterial(info.materialName),
+                .transformMatrix = info.transformMatrix
+            }
+        ));
+    }
+}
+
+void VulkanRenderer::removeRenderable(std::multimap<std::string, Renderable, RenderableComp>::iterator& it)
+{
+	m_renderableObjects.erase(it);
 }
