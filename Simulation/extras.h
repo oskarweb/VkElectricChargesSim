@@ -12,6 +12,38 @@
 #include <filesystem>
 #include <map>
 
+namespace Types
+{
+    struct Vec3d
+    {
+        double x;
+        double y;
+        double z;
+
+		Vec3d() : x(0.0), y(0.0), z(0.0) {}
+		Vec3d(double x, double y, double z) : x(x), y(y), z(z) {}
+		Vec3d(double n) : x(n), y(n), z(n) {}
+
+        Vec3d operator+(const Vec3d& other)     { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
+		Vec3d operator+=(const Vec3d& other)    { x += other.x; y += other.y; z += other.z; return *this; }
+        Vec3d operator-(const Vec3d& other)     { return Vec3d{ x - other.x, y - other.y, z - other.z }; }
+		Vec3d operator-=(const Vec3d& other)    { x -= other.x; y -= other.y; z -= other.z; return *this; }
+		Vec3d operator*(double scalar)          { return Vec3d{ x * scalar, y * scalar, z * scalar }; }
+		Vec3d operator*=(double scalar)         { x *= scalar; y *= scalar; z *= scalar; return *this; }
+		Vec3d operator/(double scalar)          { return Vec3d{ x / scalar, y / scalar, z / scalar }; }
+		Vec3d operator/=(double scalar)         { x /= scalar; y /= scalar; z /= scalar; return *this; }
+
+		operator glm::vec3() { return glm::vec3(x, y, z); }
+
+        template<typename T>
+        T operator+(const T& other)
+        {
+            return T{ static_cast<decltype(other.x)>(x) + other.x, static_cast<decltype(other.y)>(y) + other.y, static_cast<decltype(other.z)>(z) + other.z };
+        }
+
+    };
+}
+
 namespace Constants
 {
 	constexpr uint32_t WIDTH = 800;

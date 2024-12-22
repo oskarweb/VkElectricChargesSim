@@ -35,12 +35,13 @@ void VulkanRenderer::framebufferResizeCallback(GLFWwindow* window, int width, in
 
 void VulkanRenderer::recreateSwapChain()
 {
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(m_window, &width, &height);
-    while (width == 0 || height == 0) 
+	m_framebufferWidth = 0;
+	m_frameBufferheight = 0;
+    glfwGetFramebufferSize(m_window, &m_framebufferWidth, &m_frameBufferheight);
+    while (m_framebufferWidth == 0 || m_frameBufferheight == 0)
     {
         glfwWaitEvents();
-        glfwGetFramebufferSize(m_window, &width, &height);
+        glfwGetFramebufferSize(m_window, &m_framebufferWidth, &m_frameBufferheight);
     }
     vkDeviceWaitIdle(m_device);
     cleanupSwapChain();
@@ -159,22 +160,22 @@ void VulkanRenderer::init()
     createTextureImageView(m_textures[0].imageView, m_textures[0].image.image);
     createTextureSampler();
     m_meshes.emplace("pyramid", Mesh("pyramid", m_device));
-	m_meshes["pyramid"].fromVertices(pyramidVertices);
+	m_meshes["pyramid"].fromVertices(pyramidVertices.data(), pyramidVertices.size());
 	m_meshes["pyramid"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
 	m_meshes.emplace("cube", Mesh("cube", m_device));
-	m_meshes["cube"].fromVertices(cubeVertices);
+	m_meshes["cube"].fromVertices(cubeVertices.data(), cubeVertices.size());
 	m_meshes["cube"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     m_meshes.emplace("xAxis", Mesh("xAxis", m_device));
-    m_meshes["xAxis"].fromVertices(xAxisVertices);
+    m_meshes["xAxis"].fromVertices(xAxisVertices.data(), xAxisVertices.size());
     m_meshes["xAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     m_meshes.emplace("yAxis", Mesh("yAxis", m_device));
-    m_meshes["yAxis"].fromVertices(yAxisVertices);
+    m_meshes["yAxis"].fromVertices(yAxisVertices.data(), yAxisVertices.size());
     m_meshes["yAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     m_meshes.emplace("zAxis", Mesh("zAxis", m_device));
-    m_meshes["zAxis"].fromVertices(zAxisVertices);
+    m_meshes["zAxis"].fromVertices(zAxisVertices.data(), zAxisVertices.size());
     m_meshes["zAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
 	m_meshes.emplace("line", Mesh("line", m_device));
-    m_meshes["line"].fromVertices(lineVertices);
+    m_meshes["line"].fromVertices(lineVertices.data(), lineVertices.size());
 	m_meshes["line"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes.emplace("default", Mesh(m_device));
     //std::filesystem::path modelPath = Constants::MODELS_PATH / "viking_room.obj";
@@ -185,6 +186,7 @@ void VulkanRenderer::init()
     //m_meshes["bomba"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
     //testRenderable2.transformMatrix = glm::mat4(1.0f) * translationMatrix;
+    /*
     addRenderable(Renderable{
             .mesh = getMesh("cube"),
             .material = getMaterial("cube"),
@@ -195,11 +197,13 @@ void VulkanRenderer::init()
             .material = getMaterial("cube"),
             .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 6.0f))
     });
+    */
     addRenderable(Renderable{
         .mesh = getMesh("pyramid"),
         .material = getMaterial("cube"),
         .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 12.0f))
     });
+    
     addRenderable(Renderable{
         .mesh = getMesh("xAxis"),
         .material = getMaterial("line"),
@@ -914,10 +918,10 @@ void VulkanRenderer::drawObjects(VkCommandBuffer& commandBuffer)
         }
         if (object.id == 1)
         {
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::vec4 pos_rot_h = rotation * glm::vec4(glm::vec3(0.0f, object.transformMatrix[3].y, 6.0f) - glm::vec3(0.0f), 1.0f);
-            glm::vec3 pos_rot = glm::vec3(pos_rot_h) + glm::vec3(0.0f);
-            object.transformMatrix = glm::translate(glm::mat4(1.0f), pos_rot) * rotation;
+            //glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time * glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            //glm::vec4 pos_rot_h = rotation * glm::vec4(glm::vec3(0.0f, object.transformMatrix[3].y, 6.0f) - glm::vec3(0.0f), 1.0f);
+            //glm::vec3 pos_rot = glm::vec3(pos_rot_h) + glm::vec3(0.0f);
+            //object.transformMatrix = glm::translate(glm::mat4(1.0f), pos_rot) * rotation;
         }
         vkCmdPushConstants(commandBuffer, object.material->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &(object.transformMatrix));
         if (object.textureIdx)
@@ -1700,17 +1704,11 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capa
     }
 }
 
-void VulkanRenderer::mainLoop()
-{
-    while (!glfwWindowShouldClose(m_window))
-    {
-        glfwPollEvents();
-        drawFrame();
-    }
-}
-
 void VulkanRenderer::drawFrame()
 {
+    auto currentFrameTime = std::chrono::high_resolution_clock::now();
+	m_deltaTime = std::chrono::duration<double, std::chrono::seconds::period>(currentFrameTime - m_lastFrameTime).count();
+	m_lastFrameTime = currentFrameTime;
     vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -1793,7 +1791,7 @@ void VulkanRenderer::updateUniformBuffer(uint32_t currentImage)
 
 	ubo.view = m_cameraPtr->getViewMatrix();
     //ubo.view = glm::lookAt(glm::vec3(2.0f, 1.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(60.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 100.0f);
+    ubo.proj = glm::perspective(glm::radians(60.0f), m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 1000.0f);
     //ubo.proj[1][1] *= -1;
 
     memcpy(m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1846,11 +1844,11 @@ std::multimap<std::string, Renderable, RenderableComp>::iterator VulkanRenderer:
     return m_renderableObjects.insert(std::pair{ (obj.mesh->name + obj.material->name), std::move(obj) });
 }
 
-void VulkanRenderer::addRenderables(Model& model)
+void VulkanRenderer::addRenderables(Model* model)
 {
-    for (RenderableInfo& info : model.renderableInfos)
+    for (RenderableInfo& info : model->renderableInfos)
     {
-		model.renderables.emplace(info.renderableName, addRenderable(Renderable
+		model->renderables.emplace(info.renderableName, addRenderable(Renderable
             {
                 .mesh = getMesh(info.meshName),
                 .material = getMaterial(info.materialName),

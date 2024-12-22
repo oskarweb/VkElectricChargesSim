@@ -10,11 +10,24 @@
 
 struct Model
 {
-	Model() : pos(glm::vec3(0.0f)) {}
-	Model(glm::vec3 _pos) : pos(_pos) {}
+	inline static constexpr glm::vec3 FACING_DEFAULT = Renderer::WORLD_UP();
+
+	Model() = delete;
+	Model(const Model&) = delete;
+	Model& operator=(const Model&) = delete;
+	Model(Model&&) = default;
+	Model& operator=(Model&&) = default;
+
+	Model(glm::vec3 _pos) : pos(_pos), faceDirection(glm::vec3(0.0f)), offset(glm::vec3(0.0f)) {}
+	Model(glm::vec3 _pos, glm::vec3 _faceDirection) : pos(_pos), faceDirection(_faceDirection), offset(glm::vec3(0.0f)) {}
+	Model(glm::vec3 _pos, glm::vec3 _faceDirection, glm::vec3 _offset) : pos(_pos), faceDirection(_faceDirection), offset(_offset) {}
 	glm::vec3 pos;
+	glm::vec3 faceDirection;
+	glm::vec3 offset;
 	std::map <std::string, std::multimap<std::string, Renderable, RenderableComp>::iterator> renderables;
 	std::vector<RenderableInfo> renderableInfos;
+
+	virtual void update(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 faceDirection = glm::vec3(0.0f), glm::vec3 offset = glm::vec3(0.0f)) = 0;
 
 	void cleanup(Renderer* rendererHandle)
 	{
@@ -33,26 +46,21 @@ inline void printVec3(glm::vec3& vec, const std::string& name = "")
 
 struct VectorArrowModel : Model
 {
-	inline static const glm::vec3 FACING_DEFAULT = glm::vec3(0.0f, -1.0f, 0.0f);
-
 	using Model::renderables;
 
-	glm::vec3 force = glm::vec3(1.0f, 0.0f, 0.0f);
-
-
-	void update(glm::vec3 _pos, glm::vec3 _force)
+	void update(glm::vec3 _pos = glm::vec3(0.0f), glm::vec3 _faceDirection = glm::vec3(0.0f), glm::vec3 _offset = glm::vec3(0.0f)) override
 	{
 		pos = _pos;
-		force = _force;
-		glm::vec3 forceNorm = glm::normalize(force);
+		faceDirection = glm::normalize(_faceDirection);
+		offset = _offset;
 
-		glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos + force);
+		glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos + offset);
 
-		glm::quat rotation = glm::rotation(FACING_DEFAULT, forceNorm);
+		glm::quat rotation = glm::rotation(FACING_DEFAULT, faceDirection);
 		(*renderables["head"]).second.transformMatrix = translation * glm::toMat4(rotation);
 	}
 
-	VectorArrowModel(glm::vec3 _pos, glm::vec3 _force) : Model(_pos), force(_force)
+	VectorArrowModel(glm::vec3 _pos, glm::vec3 _faceDirection, glm::vec3 _offset) : Model(_pos, _faceDirection, _offset)
 	{
 
 		renderableInfos =
@@ -78,6 +86,13 @@ struct VectorArrowModel : Model
 struct ParticleModel : Model
 {
 	using Model::renderables;
+
+	void update(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 faceDirection = glm::vec3(0.0f), glm::vec3 offset = glm::vec3(0.0f)) override
+	{
+		(*renderables["particleBody"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+	}
+
+
 	ParticleModel(glm::vec3 _pos) : Model(_pos)
 	{
 		renderableInfos =
