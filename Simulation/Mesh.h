@@ -26,14 +26,16 @@ struct Mesh
 	VkBuffer m_indexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_indexBufferMemory = VK_NULL_HANDLE;
 
-	bool fromVertices(const std::vector<Vertex>& vertices)
+	bool fromVertices(const Vertex* vertices, uint32_t count)
 	{
-		for (const auto& vertex : vertices) {
-			if (m_uniqueVertices.count(vertex) == 0) {
-				m_uniqueVertices[vertex] = static_cast<uint32_t>(m_vertices.size());
-				m_vertices.emplace_back(vertex);
+		for (uint32_t i = 0; i < count; i++)
+		{
+			if (m_uniqueVertices.count(vertices[i]) == 0)
+			{
+				m_uniqueVertices[vertices[i]] = static_cast<uint32_t>(m_vertices.size());
+				m_vertices.emplace_back(vertices[i]);
 			}
-			m_indices.emplace_back(m_uniqueVertices[vertex]);
+			m_indices.emplace_back(m_uniqueVertices[vertices[i]]);
 		}
 		return true;
 	}

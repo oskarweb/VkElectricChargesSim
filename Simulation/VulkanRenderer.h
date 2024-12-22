@@ -61,14 +61,17 @@ public:
 	Material* getMaterial(const std::string& name);
 	Mesh* getMesh(const std::string& name);
 	std::multimap<std::string, Renderable, RenderableComp>::iterator addRenderable(Renderable renderable) override;
-	void addRenderables(Model& model) override;
+	void addRenderables(Model* model) override;
 	void removeRenderable(std::multimap<std::string, Renderable, RenderableComp>::iterator& it) override;
 	void cleanup();
+	const int& getFramebufferWidth() const { return m_framebufferWidth; }
+	const int& getFramebufferHeight() const { return m_frameBufferheight; }
+	const double& getDeltaTime() const { return m_deltaTime; }
+	const double& getDeltaTimeS() const { return m_deltaTime / 1000.0; }
 
 	std::multimap<std::string, Renderable, RenderableComp> m_renderableObjects;
 private:
 	void initImgui();
-	void mainLoop();
 	void cleanupSwapChain();
 	void recreateSwapChain();
 	void createInstance();
@@ -200,10 +203,15 @@ private:
 
 	VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
+	int m_framebufferWidth = 0;
+	int m_frameBufferheight = 0;
 	bool m_framebufferResized = false;
 
 	VkDescriptorPool m_imguiDescriptorPool;
 	std::array<ImDrawData*, MAX_FRAMES_IN_FLIGHT> m_imguiDrawData{nullptr};
+
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastFrameTime;
+	double m_deltaTime;
 };
 
 inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)

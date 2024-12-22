@@ -1,5 +1,7 @@
 #pragma once
 
+#include <format>
+
 #include "VulkanRenderer.h"
 #include "Camera.h"
 #include "Input.h"
@@ -41,6 +43,9 @@ public:
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
 
+			displayParticleList();
+
+			ImGui::ShowDemoWindow();
 			{
 				//static float x, y, z = 0.0f;
 				static int counter = 0;
@@ -62,15 +67,18 @@ public:
 				ImGui::Text("Is screen focused? %s", isFocused ? "Yes" : "No");
 				ImGui::Text("Position: %f, %f", mousePositionRelative.x, mousePositionRelative.y);
 				ImGui::Text("Mouse clicked: %s", ImGui::IsMouseDown(ImGuiMouseButton_Left) ? "Yes" : "No");
+				ImGui::Text("Own Delta Time: %f", m_rendererHandle.getDeltaTime());
+				ImGui::Text("ImGui Delta Time: %f", io.DeltaTime);
 				if (ImGui::Button("Add"))
 				{
 					addParticle(Particle(
-						1.0f,
-						1.0f,
-						false,
-						glm::vec3(0.0f, 0.0f, 1.0f),
-						glm::vec3(0.0f, -10.0f, 0.0f)
+						1.0,
+						1.0,
+						true,
+						Types::Vec3d(1.0, 0.0, 0.0),
+						Types::Vec3d(0.0, -10.0, 0.0)
 					));
+					//m_particles[m_particles.size() - 1].update();
 					std::cout << m_particles.size() << '\n';
 				}
 				if (ImGui::Button("Erase"))
@@ -79,9 +87,10 @@ public:
 					std::cout << m_particles.size() << '\n';
 				}
 
-				//ImGui::SliderFloat("x", &forceArrow.force.x, -1.0f, 1.0f);
-				//ImGui::SliderFloat("y", &forceArrow.force.y, -1.0f, 1.0f);
-				//ImGui::SliderFloat("z", &forceArrow.force.z, -1.0f, 1.0f);
+				for (auto& particle : m_particles)
+				{
+					particle.update(m_rendererHandle.getDeltaTimeS());
+				}
 				ImGui::Text("This is some useful text.");  
 				ImGui::ColorEdit3("clear color", (float*)&clear_color);
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
@@ -109,10 +118,18 @@ public:
 		glfwTerminate();
 	}
 
+	inline static double SLIDER_MIN_AFFECTING_FORCE = 0.0;
+	inline static double SLIDER_MAX_AFFECTING_FORCE = 10.0;
+	inline static double SLIDER_MIN_POS = 0.0;
+	inline static double SLIDER_MAX_POS= 10.0;
+
 private:
+	void displayParticleList();
 	void addParticle(Particle&& particle);
 	void removeParticle(std::vector<Particle>::iterator it);
 	void initWindow();
+	static inline std::string particleHeaderText(const Particle& particle);
+	static inline std::string particlePosDisplay(const Particle& particle);
 
 	std::vector<Particle> m_particles;
 
@@ -120,3 +137,13 @@ private:
 	VulkanRenderer& m_rendererHandle;
 	Camera m_camera;
 };
+
+std::string Simulation::particleHeaderText(const Particle& particle)
+{
+	return std::format("Particle {}", particle.getId());
+}
+
+std::string Simulation::particlePosDisplay(const Particle& particle)
+{
+    return std::format("({}, {}, {})", particle.getPos().x, particle.getPos().y, particle.getPos().z);
+}
