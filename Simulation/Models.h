@@ -10,8 +10,6 @@
 
 struct Model
 {
-	inline static constexpr glm::vec3 FACING_DEFAULT = Renderer::WORLD_UP();
-
 	Model() = delete;
 	Model(const Model&) = delete;
 	Model& operator=(const Model&) = delete;
@@ -56,7 +54,7 @@ struct VectorArrowModel : Model
 
 		glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos + offset);
 
-		glm::quat rotation = glm::rotation(FACING_DEFAULT, faceDirection);
+		glm::quat rotation = glm::rotation(Constants::WORLD_UP, faceDirection);
 		(*renderables["head"]).second.transformMatrix = translation * glm::toMat4(rotation);
 	}
 
@@ -101,6 +99,66 @@ struct ParticleModel : Model
 				"particleBody",
 				"cube",
 				"cube",
+				glm::translate(glm::mat4(1.0f), pos)
+			}
+		};
+	}
+};
+
+struct MutableTrailModel : Model
+{
+	using Model::renderables;
+
+	void update(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 faceDirection = glm::vec3(0.0f), glm::vec3 offset = glm::vec3(0.0f)) override
+	{
+		(*renderables["trail"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+	}
+
+	MutableTrailModel(glm::vec3 _pos) : Model(_pos)
+	{
+		renderableInfos =
+		{
+			RenderableInfo{
+				"trail",
+				"line",
+				"line",
+				glm::translate(glm::mat4(1.0f), pos)
+			}
+		};
+	}
+};
+
+struct AxesModel : Model
+{
+	using Model::renderables;
+
+	void update(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 faceDirection = glm::vec3(0.0f), glm::vec3 offset = glm::vec3(0.0f)) override
+	{
+		(*renderables["xAxis"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+		(*renderables["yAxis"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+		(*renderables["zAxis"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+	}
+
+	AxesModel(glm::vec3 _pos) : Model(_pos)
+	{
+		renderableInfos =
+		{
+			RenderableInfo{
+				"xAxis",
+				"xAxis",
+				"line",
+				glm::translate(glm::mat4(1.0f), pos)
+			},
+			RenderableInfo{
+				"yAxis",
+				"yAxis",
+				"line",
+				glm::translate(glm::mat4(1.0f), pos)
+			},
+			RenderableInfo{
+				"zAxis",
+				"zAxis",
+				"line",
 				glm::translate(glm::mat4(1.0f), pos)
 			}
 		};

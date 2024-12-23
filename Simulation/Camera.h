@@ -79,16 +79,16 @@ public:
 			return;
 		}
         
-        float xoffset = Input::getMousePos().x - m_lastX;
-        float yoffset = m_lastY - Input::getMousePos().y;
+        double xoffset = Input::getMousePos().x - m_lastX;
+        double yoffset = m_lastY - Input::getMousePos().y;
         m_lastX = Input::getMousePos().x;
         m_lastY = Input::getMousePos().y;
 
         xoffset *= m_sensitivity;
         yoffset *= m_sensitivity;
 
-        m_yaw += xoffset;
-        m_pitch += yoffset;
+        m_yaw += static_cast<float>(xoffset);
+        m_pitch += static_cast<float>(yoffset);
 
 		m_pitch = std::clamp(m_pitch, glm::radians(-89.0f), glm::radians(89.0f));
         //std::cout << "x: " << xpos << "y: " << ypos << '\n';
