@@ -11,6 +11,7 @@
 #include <vector>
 #include <filesystem>
 #include <map>
+#include <format>
 
 namespace Types
 {
@@ -20,9 +21,9 @@ namespace Types
         double y;
         double z;
 
-		Vec3d() : x(0.0), y(0.0), z(0.0) {}
-		Vec3d(double x, double y, double z) : x(x), y(y), z(z) {}
-		Vec3d(double n) : x(n), y(n), z(n) {}
+		constexpr Vec3d() : x(0.0), y(0.0), z(0.0) {}
+        constexpr Vec3d(double x, double y, double z) : x(x), y(y), z(z) {}
+        constexpr Vec3d(double n) : x(n), y(n), z(n) {}
 
         Vec3d operator+(const Vec3d& other)     { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
 		Vec3d operator+=(const Vec3d& other)    { x += other.x; y += other.y; z += other.z; return *this; }
@@ -42,15 +43,22 @@ namespace Types
         }
 
     };
+
+    struct ImGuiWindowInfo
+    {
+		ImVec2 size;
+		ImVec2 pos;
+    };
 }
 
 namespace Constants
 {
-	constexpr uint32_t WIDTH = 800;
-	constexpr uint32_t HEIGHT = 600;
+	constexpr uint32_t WIDTH = 1280;
+	constexpr uint32_t HEIGHT = 720;
     constexpr uint32_t TEXTURE_COUNT = 1;
-    constexpr uint32_t AXES_LENGTH = 100.0f;
+    constexpr float AXES_LENGTH = 100.0f;
     constexpr float EPSILON = 0.0000000000000000000000001f;
+	constexpr glm::vec3 WORLD_UP = glm::vec3(0.0f, -1.0f, 0.0f);
 
 	const std::vector<const char*> validationLayers =
 	{
@@ -64,6 +72,11 @@ namespace Constants
 
 namespace Helpers
 {
+	inline std::string vectorFormat(const Types::Vec3d& vec)
+	{
+		return std::format("({:.2f}, {:.2f}, {:.2f})", vec.x, vec.y, vec.z);
+	}
+
     inline std::vector<char> readFile(const std::filesystem::path& filepath)
     {
         std::ifstream file(filepath, std::ios::ate | std::ios::binary);

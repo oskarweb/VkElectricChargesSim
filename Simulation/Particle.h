@@ -19,11 +19,30 @@ public:
 	Particle() : 
 		m_charge(0.0), 
 		m_mass(0.0), 
+		m_affectingForce(Types::Vec3d(0.0)),
+		m_acceleration(Types::Vec3d(0.0)),
+		m_velocity(Types::Vec3d(0.0)),
+		m_pos(Types::Vec3d(0.0)),
 		m_movable(true),
-		m_affectingForce(0.0), 
-		m_acceleration(0.0),
-		m_velocity(0.0),
-		m_pos(0.0),
+		m_id(nextId++)
+	{
+		uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<Types::Vec3d>(m_pos)));
+		uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::vec3(0.0f)));
+	}
+
+	Particle(
+		double charge,
+		double mass,
+		bool movable,
+		Types::Vec3d pos
+	) :
+		m_charge(charge),
+		m_mass(mass),
+		m_affectingForce(Types::Vec3d(0.0)),
+		m_acceleration(Types::Vec3d(0.0)),
+		m_velocity(Types::Vec3d(0.0)),
+		m_pos(pos),
+		m_movable(movable),
 		m_id(nextId++)
 	{
 		uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<Types::Vec3d>(m_pos)));
@@ -41,7 +60,7 @@ public:
 		m_mass(mass),
 		m_affectingForce(affectingForce),
 		m_acceleration(affectingForce / mass),
-		m_velocity(0.0),
+		m_velocity(Types::Vec3d(0.0)),
 		m_pos(pos),
 		m_movable(movable),
 		m_id(nextId++)
@@ -50,8 +69,6 @@ public:
 		uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::vec3(0.0f)));
 		m_models[F_VECTOR_MODEL_NAME]->update(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::normalize(static_cast<glm::vec3>(m_affectingForce)) * 5.0f);
 	}
-
-	// F = m * a, a = F / m
 
 	void update(Types::Vec3d affectingForce, double time)
 	{
@@ -102,7 +119,7 @@ public:
 	}
 	const bool isMovable() const { return m_movable; }
 	const uint64_t& getId() const { return m_id; }
-
+	static void resetId() { nextId = 0; }
 private:
 	double m_charge;
 	double m_mass;

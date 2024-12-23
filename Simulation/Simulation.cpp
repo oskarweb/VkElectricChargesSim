@@ -6,6 +6,7 @@ void Simulation::initWindow()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     m_window = glfwCreateWindow(Constants::WIDTH, Constants::HEIGHT, "Simulation", nullptr, nullptr);
+    glfwSetWindowSizeLimits(m_window, Constants::WIDTH, Constants::HEIGHT, GLFW_DONT_CARE, GLFW_DONT_CARE);
     glfwSetWindowUserPointer(m_window, this);
 }
 
@@ -24,37 +25,222 @@ void Simulation::removeParticle(std::vector<Particle>::iterator it)
     }
 }
 
-void Simulation::displayParticleList()
+void Simulation::run()
 {
-    static ImVec2 previousSize = ImVec2(0.0f, 0.0f);
-    ImGui::SetNextWindowPos(ImVec2(m_rendererHandle.getFramebufferWidth() / 2.0f - (previousSize.x / 2.0f), 0.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(300, 100));
+	initWindow();
+	Input::setWindow(m_window);
+	glfwSetWindowUserPointer(m_window, this);
+	m_rendererHandle.setWindow(m_window);
+	m_rendererHandle.setCamera(&m_camera);
+	m_rendererHandle.init();
+	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GLFW_TRUE);
+	glfwMakeContextCurrent(m_window);
+
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	ImGui::StyleColorsDark();
+	ImGui_ImplGlfw_CursorPosCallback(m_window, Input::mousePos.x, Input::mousePos.y);
+
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+	AxesModel axes(glm::vec3(0.0f));
+	m_rendererHandle.addRenderables(&axes);
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		glfwPollEvents();
+		m_camera.update();
+		m_rendererHandle.drawFrame();
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+
+		ImGui::ShowDemoWindow();
+
+		displayMainCtrlWindow();
+		displayParticleListWindow();
+		displayParticleAddWindow();
+
+		if (not m_paused)
+		{
+			m_elapsedTime += m_rendererHandle.getDeltaTime();
+		}
+
+		for (auto& particle : m_particles)
+		{
+			if (not m_paused && particle.isMovable())
+			{
+				particle.update(m_rendererHandle.getDeltaTimeS());
+			}
+		}
+
+		ImGui::Render();
+		m_rendererHandle.recordImguiData(ImGui::GetDrawData());
+	}
+
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	m_rendererHandle.cleanup();
+	glfwDestroyWindow(m_window);
+	glfwTerminate();
+}
+
+void Simulation::displayMainCtrlWindow()
+{
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSizeConstraints(MAIN_CTRL_WINDOW_MIN_SIZE, ImVec2(m_particleAddWindowInfo.pos.x, static_cast<float>(m_rendererHandle.getFramebufferHeight()) / 2.0f));
+	if (!ImGui::Begin("Options"))
+	{
+		ImGui::End();
+		return;
+	}
+	m_mainCtrlWindowInfo.size = ImGui::GetWindowSize();
+	m_mainCtrlWindowInfo.pos = ImGui::GetWindowPos();
+
+	ImVec2 mousePositionAbsolute = ImGui::GetMousePos();
+	ImVec2 screenPositionAbsolute = ImGui::GetItemRectMin();
+	ImVec2 mousePositionRelative = ImVec2(mousePositionAbsolute.x - screenPositionAbsolute.x, mousePositionAbsolute.y - screenPositionAbsolute.y);
+	ImGui::Text("Time Elapsed: %fs", m_elapsedTime);
+	ImGui::Text("Position: %f, %f", mousePositionRelative.x, mousePositionRelative.y);
+	ImGui::Text("Own Delta Time: %f", m_rendererHandle.getDeltaTime());
+	ImGui::Text("ImGui Delta Time: %f", ImGui::GetIO().DeltaTime);
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	
+	if (ImGui::Button("Start"))
+	{
+		m_paused = false;
+	}
+
+	if (ImGui::Button("Pause"))
+	{
+		m_paused = true;
+	}
+
+	if (ImGui::Button("Restart Simulation"))
+	{
+		restartSimulation();
+	}
+
+	if (ImGui::Button("Reset All"))
+	{
+		resetAll();
+	}
+
+	ImGui::End();
+}
+
+void Simulation::displayParticleListWindow()
+{
+    std::vector<std::vector<Particle>::iterator> particlesToRemove;
+    ImGui::SetNextWindowPos(ImVec2(m_rendererHandle.getFramebufferWidth() - m_particleListWindowInfo.size.x, 0.0f));
+	ImGui::SetNextWindowSizeConstraints(PARTICLE_LIST_WINDOW_MIN_SIZE, ImVec2(m_rendererHandle.getFramebufferWidth() - MAIN_CTRL_WINDOW_MIN_SIZE.x - PARTICLE_ADD_WINDOW_MIN_SIZE.x, m_rendererHandle.getFramebufferHeight() * 0.9f));
     if (!ImGui::Begin("Particles"))
     {
         ImGui::End();
-        ImGui::PopStyleVar();
         return;
     }
-	previousSize = ImGui::GetWindowSize();
-    for (auto& particle : m_particles)
+	m_particleListWindowInfo.size = ImGui::GetWindowSize();
+	m_particleListWindowInfo.pos = ImGui::GetWindowPos();
+    if (ImGui::BeginTable("ParticleTable", 3))
     {
-        if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str())) 
+        ImGui::TableSetupColumn("Particle ID");
+        ImGui::TableSetupColumn("Position");
+        ImGui::TableSetupColumn("F Affecting Particle");
+        ImGui::TableHeadersRow();
+        for (auto it = m_particles.begin(); it != m_particles.end(); ++it)
         {
-            float mass = particle.getMass();
-            ImGui::Text("Mass: ");
-			ImGui::InputFloat(std::format("##mass{}", particle.getId()).c_str(), &mass);
-			ImGui::Text("Affecting Force: ");
-			ImGui::SliderScalar(std::format("##affectingForce{}x", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().x, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
-            ImGui::SliderScalar(std::format("##affectingForce{}y", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().y, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
-            ImGui::SliderScalar(std::format("##affectingForce{}z", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().z, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
-			ImGui::Text("Position: ");
-			ImGui::SliderScalar(std::format("##pos{}x", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().x, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
-            ImGui::SliderScalar(std::format("##pos{}y", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().y, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
-            ImGui::SliderScalar(std::format("##pos{}z", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().z, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
-			particle.setMass(mass);
+            Particle& particle = *it;
+            ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			if (ImGui::Button(std::format("X##{}", particle.getId()).c_str()))
+			{
+				particlesToRemove.push_back(it);
+			}
+            ImGui::SameLine();
+            if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str()))
+            {
+                double mass = particle.getMass();
+                ImGui::Text("Mass: ");
+                ImGui::InputDouble(std::format("##mass{}", particle.getId()).c_str(), &mass);
+                ImGui::Text("Affecting Force: ");
+                ImGui::SliderScalar(std::format("##affectingForce{}x", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().x, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
+                ImGui::SliderScalar(std::format("##affectingForce{}y", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().y, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
+                ImGui::SliderScalar(std::format("##affectingForce{}z", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().z, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
+                ImGui::Text("Position: ");
+                ImGui::SliderScalar(std::format("##pos{}x", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().x, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
+                ImGui::SliderScalar(std::format("##pos{}y", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().y, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
+                ImGui::SliderScalar(std::format("##pos{}z", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().z, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
+                particle.setMass(mass);
+            }
+			ImGui::TableSetColumnIndex(1);
+			ImGui::Text(Helpers::vectorFormat(particle.getPos()).c_str());
+			ImGui::TableSetColumnIndex(2);
+			ImGui::Text(Helpers::vectorFormat(particle.getAffectingForce()).c_str());
         }
+		ImGui::EndTable();
     }
 	ImGui::End();
-    ImGui::PopStyleVar();
+    for (auto& it : particlesToRemove)
+    {
+        removeParticle(it);
+    }
 }
 
+void Simulation::displayParticleAddWindow()
+{
+    ImGui::SetNextWindowPos(ImVec2(m_rendererHandle.getFramebufferWidth() - m_particleListWindowInfo.size.x - m_particleAddWindowInfo.size.x, 0.0f));
+    ImGui::SetNextWindowSizeConstraints(PARTICLE_ADD_WINDOW_MIN_SIZE, ImVec2(m_rendererHandle.getFramebufferWidth() - m_mainCtrlWindowInfo.size.x - m_particleListWindowInfo.size.x, static_cast<float>(m_rendererHandle.getFramebufferHeight()) / 2.0f));
+    if (!ImGui::Begin("Add Particle"))
+    {
+        ImGui::End();
+        return;
+    }
+	m_particleAddWindowInfo.size = ImGui::GetWindowSize();
+	m_particleAddWindowInfo.pos = ImGui::GetWindowPos();
+
+	static double charge = DEFAULT_PARTICLE_CHARGE;
+	static double mass = DEFAULT_PARTICLE_MASS;
+	static bool movable = DEFAULT_PARTICLE_MOVABLE;
+	static Types::Vec3d pos = DEFAULT_PARTICLE_POS;
+
+	ImGui::Text("Charge: ");
+	ImGui::InputDouble("##charge", &charge);
+	ImGui::Text("Mass: ");
+	ImGui::InputDouble("##mass", &mass);
+	ImGui::Text("Position: ");
+	ImGui::InputDouble("##posx", &pos.x);
+	ImGui::InputDouble("##posy", &pos.y);
+	ImGui::InputDouble("##posz", &pos.z);
+	ImGui::Text("Movable: ");
+	ImGui::Checkbox("##movable", &movable);
+	if (ImGui::Button("Add"))
+	{
+		addParticle(Particle(charge, mass, movable, Types::Vec3d(pos.x, pos.y, pos.z)));
+		charge = DEFAULT_PARTICLE_CHARGE;
+		mass = DEFAULT_PARTICLE_MASS;
+		movable = DEFAULT_PARTICLE_MOVABLE;
+		pos = DEFAULT_PARTICLE_POS;
+	}
+
+    ImGui::End();
+}
+
+void Simulation::resetAll()
+{
+	for (auto& particle : m_particles)
+	{
+		particle.cleanup();
+	}
+	m_elapsedTime = 0.0;
+	m_particles.clear();
+	Particle::resetId();
+}
+
+void Simulation::restartSimulation()
+{
+	resetAll();
+}

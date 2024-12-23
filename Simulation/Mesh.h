@@ -26,7 +26,7 @@ struct Mesh
 	VkBuffer m_indexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory m_indexBufferMemory = VK_NULL_HANDLE;
 
-	bool fromVertices(const Vertex* vertices, uint32_t count)
+	bool fromVertices(const Vertex* vertices, size_t count)
 	{
 		for (uint32_t i = 0; i < count; i++)
 		{

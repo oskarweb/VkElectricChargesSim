@@ -203,22 +203,7 @@ void VulkanRenderer::init()
         .material = getMaterial("cube"),
         .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 12.0f))
     });
-    
-    addRenderable(Renderable{
-        .mesh = getMesh("xAxis"),
-        .material = getMaterial("line"),
-        .transformMatrix = glm::mat4(1.0f)
-    });
-    addRenderable(Renderable{
-        .mesh = getMesh("yAxis"),
-        .material = getMaterial("line"),
-        .transformMatrix = glm::mat4(1.0f)
-    });
-    addRenderable(Renderable{
-        .mesh = getMesh("zAxis"),
-        .material = getMaterial("line"),
-        .transformMatrix = glm::mat4(1.0f)
-    });
+   
     //m_renderableObjects.emplace_back(testRenderable2);
     //createVertexBuffer();
     //createIndexBuffer();

@@ -67,7 +67,7 @@ public:
 	const int& getFramebufferWidth() const { return m_framebufferWidth; }
 	const int& getFramebufferHeight() const { return m_frameBufferheight; }
 	const double& getDeltaTime() const { return m_deltaTime; }
-	const double& getDeltaTimeS() const { return m_deltaTime / 1000.0; }
+	double getDeltaTimeS() const { return m_deltaTime / 1000.0; } 
 
 	std::multimap<std::string, Renderable, RenderableComp> m_renderableObjects;
 private:
@@ -203,8 +203,8 @@ private:
 
 	VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-	int m_framebufferWidth = 0;
-	int m_frameBufferheight = 0;
+	int m_framebufferWidth = Constants::WIDTH;
+	int m_frameBufferheight = Constants::HEIGHT;
 	bool m_framebufferResized = false;
 
 	VkDescriptorPool m_imguiDescriptorPool;
