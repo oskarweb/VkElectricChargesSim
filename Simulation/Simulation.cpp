@@ -25,6 +25,30 @@ void Simulation::removeParticle(std::vector<Particle>::iterator it)
     }
 }
 
+void Simulation::calculateParticlePositions()
+{
+	int steps = static_cast<int>(m_simulationTime / PARTICLE_TIME_STEP_S);
+	for (int i = 0; i < steps; ++i)
+	{
+		for (auto& particle : m_particles)
+		{
+			Types::Vec3d force{ 0.0 };
+			for (auto& particle_other : m_particles)
+			{
+				if (particle.getId() != particle_other.getId())
+				{
+					force += particle.getCoulombForce(particle_other);
+				}
+			}
+			particle.setAffectingForce(force);
+			particle.setAcceleration(force / particle.getMass());
+			particle.setVelocity(particle.getVelocity() + (particle.getAcceleration() * PARTICLE_TIME_STEP_S));
+			particle.setPos(particle.getPos() + (particle.getVelocity() * PARTICLE_TIME_STEP_S));
+			particle.pushState();
+		}
+	}
+}
+
 void Simulation::run()
 {
 	initWindow();
@@ -68,11 +92,24 @@ void Simulation::run()
 			m_elapsedTime += m_rendererHandle.getDeltaTime();
 		}
 
-		for (auto& particle : m_particles)
+		if (not m_paused && m_simulateFromPrecalculatedSteps)
 		{
-			if (not m_paused && particle.isMovable())
+			for (auto& particle : m_particles)
 			{
-				particle.update(m_rendererHandle.getDeltaTimeS());
+				if (particle.isMovable())
+				{
+					particle.updateFromPrecalcPos(static_cast<uint32_t>(m_elapsedTime / PARTICLE_TIME_STEP_S));
+				}
+			}
+		}
+		else if (not m_paused)
+		{
+			for (auto& particle : m_particles)
+			{
+				if (particle.isMovable())
+				{
+					particle.update(m_elapsedTime);
+				}
 			}
 		}
 
@@ -92,6 +129,7 @@ void Simulation::run()
 void Simulation::displayMainCtrlWindow()
 {
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowBgAlpha(WINDOWS_BG_ALPHA);
 	ImGui::SetNextWindowSizeConstraints(MAIN_CTRL_WINDOW_MIN_SIZE, ImVec2(m_particleAddWindowInfo.pos.x, static_cast<float>(m_rendererHandle.getFramebufferHeight()) / 2.0f));
 	if (!ImGui::Begin("Options"))
 	{
@@ -109,13 +147,21 @@ void Simulation::displayMainCtrlWindow()
 	ImGui::Text("Own Delta Time: %f", m_rendererHandle.getDeltaTime());
 	ImGui::Text("ImGui Delta Time: %f", ImGui::GetIO().DeltaTime);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+	ImGui::InputDouble("Simulation Time (s)", &m_simulationTime);
+
+	ImGui::Checkbox("Simulate from precalculated steps", &m_simulateFromPrecalculatedSteps);
 	
-	if (ImGui::Button("Start"))
+	if (ImGui::Button("Start") && m_paused)
 	{
+		if (m_simulateFromPrecalculatedSteps)
+		{
+			calculateParticlePositions();
+		}
 		m_paused = false;
 	}
 
-	if (ImGui::Button("Pause"))
+	if (ImGui::Button("Pause") && not m_paused)
 	{
 		m_paused = true;
 	}
@@ -137,6 +183,7 @@ void Simulation::displayParticleListWindow()
 {
     std::vector<std::vector<Particle>::iterator> particlesToRemove;
     ImGui::SetNextWindowPos(ImVec2(m_rendererHandle.getFramebufferWidth() - m_particleListWindowInfo.size.x, 0.0f));
+	ImGui::SetNextWindowBgAlpha(WINDOWS_BG_ALPHA);
 	ImGui::SetNextWindowSizeConstraints(PARTICLE_LIST_WINDOW_MIN_SIZE, ImVec2(m_rendererHandle.getFramebufferWidth() - MAIN_CTRL_WINDOW_MIN_SIZE.x - PARTICLE_ADD_WINDOW_MIN_SIZE.x, m_rendererHandle.getFramebufferHeight() * 0.9f));
     if (!ImGui::Begin("Particles"))
     {
@@ -145,23 +192,25 @@ void Simulation::displayParticleListWindow()
     }
 	m_particleListWindowInfo.size = ImGui::GetWindowSize();
 	m_particleListWindowInfo.pos = ImGui::GetWindowPos();
-    if (ImGui::BeginTable("ParticleTable", 3))
+    if (ImGui::BeginTable("ParticleTable", 5))
     {
         ImGui::TableSetupColumn("Particle ID");
-        ImGui::TableSetupColumn("Position");
-        ImGui::TableSetupColumn("F Affecting Particle");
-        ImGui::TableHeadersRow();
+        ImGui::TableSetupColumn("Pos");
+        ImGui::TableSetupColumn("Vel");
+		ImGui::TableSetupColumn("Acc");
+		ImGui::TableSetupColumn("F");
+		ImGui::TableHeadersRow();
         for (auto it = m_particles.begin(); it != m_particles.end(); ++it)
         {
             Particle& particle = *it;
             ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			if (ImGui::Button(std::format("X##{}", particle.getId()).c_str()))
+			if (ImGui::Button(std::format("X##{}", particle.getId()).c_str()) && m_paused)
 			{
 				particlesToRemove.push_back(it);
 			}
             ImGui::SameLine();
-            if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str()))
+            if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str()) && not m_simulateFromPrecalculatedSteps)
             {
                 double mass = particle.getMass();
                 ImGui::Text("Mass: ");
@@ -179,6 +228,10 @@ void Simulation::displayParticleListWindow()
 			ImGui::TableSetColumnIndex(1);
 			ImGui::Text(Helpers::vectorFormat(particle.getPos()).c_str());
 			ImGui::TableSetColumnIndex(2);
+			ImGui::Text(Helpers::vectorFormat(particle.getVelocity()).c_str());
+			ImGui::TableSetColumnIndex(3);
+			ImGui::Text(Helpers::vectorFormat(particle.getAcceleration()).c_str());
+			ImGui::TableSetColumnIndex(4);
 			ImGui::Text(Helpers::vectorFormat(particle.getAffectingForce()).c_str());
         }
 		ImGui::EndTable();
@@ -193,6 +246,7 @@ void Simulation::displayParticleListWindow()
 void Simulation::displayParticleAddWindow()
 {
     ImGui::SetNextWindowPos(ImVec2(m_rendererHandle.getFramebufferWidth() - m_particleListWindowInfo.size.x - m_particleAddWindowInfo.size.x, 0.0f));
+	ImGui::SetNextWindowBgAlpha(WINDOWS_BG_ALPHA);
     ImGui::SetNextWindowSizeConstraints(PARTICLE_ADD_WINDOW_MIN_SIZE, ImVec2(m_rendererHandle.getFramebufferWidth() - m_mainCtrlWindowInfo.size.x - m_particleListWindowInfo.size.x, static_cast<float>(m_rendererHandle.getFramebufferHeight()) / 2.0f));
     if (!ImGui::Begin("Add Particle"))
     {
@@ -209,15 +263,19 @@ void Simulation::displayParticleAddWindow()
 
 	ImGui::Text("Charge: ");
 	ImGui::InputDouble("##charge", &charge);
+	
 	ImGui::Text("Mass: ");
 	ImGui::InputDouble("##mass", &mass);
+
 	ImGui::Text("Position: ");
 	ImGui::InputDouble("##posx", &pos.x);
 	ImGui::InputDouble("##posy", &pos.y);
 	ImGui::InputDouble("##posz", &pos.z);
+	
 	ImGui::Text("Movable: ");
 	ImGui::Checkbox("##movable", &movable);
-	if (ImGui::Button("Add"))
+	
+	if (ImGui::Button("Add") && ((m_paused && m_simulateFromPrecalculatedSteps) || (not m_simulateFromPrecalculatedSteps)))
 	{
 		addParticle(Particle(charge, mass, movable, Types::Vec3d(pos.x, pos.y, pos.z)));
 		charge = DEFAULT_PARTICLE_CHARGE;
@@ -237,6 +295,8 @@ void Simulation::resetAll()
 	}
 	m_elapsedTime = 0.0;
 	m_particles.clear();
+	m_paused = true;
+	m_simulateFromPrecalculatedSteps = true;
 	Particle::resetId();
 }
 

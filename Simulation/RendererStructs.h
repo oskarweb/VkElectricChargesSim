@@ -66,6 +66,14 @@ struct CameraBuffer {
 
 struct RenderableInfo
 {
+	RenderableInfo(
+        const std::string& renderableName,
+        const std::string& meshName,
+        const std::string& materialName,
+        glm::mat4 transformMatrix
+    ) : renderableName(renderableName), meshName(meshName), materialName(materialName), transformMatrix(transformMatrix) 
+    {}
+
     std::string renderableName;
     std::string meshName;
     std::string materialName;

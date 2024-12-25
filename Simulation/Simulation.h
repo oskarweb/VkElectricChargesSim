@@ -20,6 +20,7 @@ public:
 	void run();
 
 private:
+	void calculateParticlePositions();
 	void displayMainCtrlWindow();
 	void displayParticleListWindow();
 	void displayParticleAddWindow();
@@ -36,14 +37,19 @@ private:
 	VulkanRenderer& m_rendererHandle;
 	Camera m_camera;
 
+	bool m_simulateFromPrecalculatedSteps = true;
 	bool m_paused = true;
 	double m_startTime = 0.0;
 	double m_elapsedTime = 0.0;
+	double m_simulationTime = 0.0;
 
 	Types::ImGuiWindowInfo m_mainCtrlWindowInfo = { MAIN_CTRL_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	Types::ImGuiWindowInfo m_particleListWindowInfo = { PARTICLE_LIST_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	Types::ImGuiWindowInfo m_particleAddWindowInfo = { PARTICLE_ADD_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 
+	inline static constexpr double PARTICLE_TIME_STEP_S = 0.0001; // seconds
+
+	inline static float WINDOWS_BG_ALPHA = 0.50f;
 	inline static constexpr ImVec2 MAIN_CTRL_WINDOW_MIN_SIZE = ImVec2(350, 200);
 	inline static constexpr ImVec2 PARTICLE_LIST_WINDOW_MIN_SIZE = ImVec2(600, 100);
 	inline static constexpr ImVec2 PARTICLE_ADD_WINDOW_MIN_SIZE = ImVec2(200, 200);

@@ -198,12 +198,13 @@ void VulkanRenderer::init()
             .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 6.0f))
     });
     */
+    /*
     addRenderable(Renderable{
         .mesh = getMesh("pyramid"),
         .material = getMaterial("cube"),
         .transformMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)) * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 12.0f))
     });
-   
+    */
     //m_renderableObjects.emplace_back(testRenderable2);
     //createVertexBuffer();
     //createIndexBuffer();
@@ -1691,9 +1692,6 @@ VkExtent2D VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capa
 
 void VulkanRenderer::drawFrame()
 {
-    auto currentFrameTime = std::chrono::high_resolution_clock::now();
-	m_deltaTime = std::chrono::duration<double, std::chrono::seconds::period>(currentFrameTime - m_lastFrameTime).count();
-	m_lastFrameTime = currentFrameTime;
     vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -1760,6 +1758,10 @@ void VulkanRenderer::drawFrame()
     {
         throw std::runtime_error("failed to present swap chain image!");
     }
+    
+    auto currentFrameTime = std::chrono::high_resolution_clock::now();
+    m_deltaTime = std::chrono::duration<double, std::chrono::seconds::period>(currentFrameTime - m_lastFrameTime).count();
+    m_lastFrameTime = currentFrameTime;
 
     m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -1835,9 +1837,11 @@ void VulkanRenderer::addRenderables(Model* model)
     {
 		model->renderables.emplace(info.renderableName, addRenderable(Renderable
             {
-                .mesh = getMesh(info.meshName),
-                .material = getMaterial(info.materialName),
-                .transformMatrix = info.transformMatrix
+                getMesh(info.meshName),
+                getMaterial(info.materialName),
+                info.transformMatrix,
+                nullptr,
+                0ull
             }
         ));
     }

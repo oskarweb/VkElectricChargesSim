@@ -1,12 +1,21 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <map>
 
 #include "Renderer.h"
 #include "RendererStructs.h"
 #include "extras.h"
+
+
+inline void printVec3(glm::vec3& vec, const std::string& name = "")
+{
+	std::cout << name << vec.x << " " << vec.y << " " << vec.z << std::endl;
+}
 
 struct Model
 {
@@ -16,7 +25,14 @@ struct Model
 	Model(Model&&) = default;
 	Model& operator=(Model&&) = default;
 
-	Model(glm::vec3 _pos) : pos(_pos), faceDirection(glm::vec3(0.0f)), offset(glm::vec3(0.0f)) {}
+	Model(glm::vec3 _pos) 
+	{
+		pos = _pos;
+		faceDirection = glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f));
+		offset = glm::vec3(0.0f);
+		renderables = std::map <std::string, std::multimap<std::string, Renderable, RenderableComp>::iterator>();
+		renderableInfos = std::vector<RenderableInfo>();
+	}
 	Model(glm::vec3 _pos, glm::vec3 _faceDirection) : pos(_pos), faceDirection(_faceDirection), offset(glm::vec3(0.0f)) {}
 	Model(glm::vec3 _pos, glm::vec3 _faceDirection, glm::vec3 _offset) : pos(_pos), faceDirection(_faceDirection), offset(_offset) {}
 	glm::vec3 pos;
@@ -37,11 +53,6 @@ struct Model
 	}
 };
 
-inline void printVec3(glm::vec3& vec, const std::string& name = "")
-{
-	std::cout << name << vec.x << " " << vec.y << " " << vec.z << std::endl;
-}
-
 struct VectorArrowModel : Model
 {
 	using Model::renderables;
@@ -60,8 +71,7 @@ struct VectorArrowModel : Model
 
 	VectorArrowModel(glm::vec3 _pos, glm::vec3 _faceDirection, glm::vec3 _offset) : Model(_pos, _faceDirection, _offset)
 	{
-
-		renderableInfos =
+		renderableInfos = std::vector<RenderableInfo>
 		{
 			RenderableInfo{
 				"head",
@@ -93,7 +103,7 @@ struct ParticleModel : Model
 
 	ParticleModel(glm::vec3 _pos) : Model(_pos)
 	{
-		renderableInfos =
+		renderableInfos = 
 		{
 			RenderableInfo{
 				"particleBody",
@@ -116,7 +126,7 @@ struct MutableTrailModel : Model
 
 	MutableTrailModel(glm::vec3 _pos) : Model(_pos)
 	{
-		renderableInfos =
+		renderableInfos = std::vector<RenderableInfo>
 		{
 			RenderableInfo{
 				"trail",
@@ -141,7 +151,11 @@ struct AxesModel : Model
 
 	AxesModel(glm::vec3 _pos) : Model(_pos)
 	{
-		renderableInfos =
+		for (auto info : renderableInfos)
+		{
+			std::cout << info.renderableName << std::endl;
+		}
+		renderableInfos = std::vector<RenderableInfo>
 		{
 			RenderableInfo{
 				"xAxis",

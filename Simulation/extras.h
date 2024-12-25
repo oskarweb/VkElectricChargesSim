@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 
+#include "imgui.h"
+
 #include <fstream>
 #include <cstdint>
 #include <vector>
@@ -20,28 +22,29 @@ namespace Types
         double x;
         double y;
         double z;
-
-		constexpr Vec3d() : x(0.0), y(0.0), z(0.0) {}
+    
+        constexpr Vec3d() : x(0.0), y(0.0), z(0.0) {}
         constexpr Vec3d(double x, double y, double z) : x(x), y(y), z(z) {}
         constexpr Vec3d(double n) : x(n), y(n), z(n) {}
-
-        Vec3d operator+(const Vec3d& other)     { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
-		Vec3d operator+=(const Vec3d& other)    { x += other.x; y += other.y; z += other.z; return *this; }
-        Vec3d operator-(const Vec3d& other)     { return Vec3d{ x - other.x, y - other.y, z - other.z }; }
-		Vec3d operator-=(const Vec3d& other)    { x -= other.x; y -= other.y; z -= other.z; return *this; }
-		Vec3d operator*(double scalar)          { return Vec3d{ x * scalar, y * scalar, z * scalar }; }
-		Vec3d operator*=(double scalar)         { x *= scalar; y *= scalar; z *= scalar; return *this; }
-		Vec3d operator/(double scalar)          { return Vec3d{ x / scalar, y / scalar, z / scalar }; }
-		Vec3d operator/=(double scalar)         { x /= scalar; y /= scalar; z /= scalar; return *this; }
-
-		operator glm::vec3() { return glm::vec3(x, y, z); }
-
+    
+        constexpr double length2() const { return x * x + y * y + z * z; }
+    
+        Vec3d operator+(const Vec3d& other) const   { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
+        Vec3d& operator+=(const Vec3d& other)       { x += other.x; y += other.y; z += other.z; return *this; }
+        Vec3d operator-(const Vec3d& other) const   { return Vec3d{ x - other.x, y - other.y, z - other.z }; }
+        Vec3d& operator-=(const Vec3d& other)       { x -= other.x; y -= other.y; z -= other.z; return *this; }
+        Vec3d operator*(double scalar) const        { return Vec3d{ x * scalar, y * scalar, z * scalar }; }
+        Vec3d& operator*=(double scalar)            { x *= scalar; y *= scalar; z *= scalar; return *this; }
+        Vec3d operator/(double scalar) const        { return Vec3d{ x / scalar, y / scalar, z / scalar }; }
+        Vec3d& operator/=(double scalar)            { x /= scalar; y /= scalar; z /= scalar; return *this; }
+    
+        operator glm::vec3() const { return glm::vec3(x, y, z); }
+    
         template<typename T>
-        T operator+(const T& other)
+        T operator+(const T& other) const
         {
             return T{ static_cast<decltype(other.x)>(x) + other.x, static_cast<decltype(other.y)>(y) + other.y, static_cast<decltype(other.z)>(z) + other.z };
         }
-
     };
 
     struct ImGuiWindowInfo
@@ -53,6 +56,8 @@ namespace Types
 
 namespace Constants
 {
+    constexpr double SOFTENING_CONSTANT = 0.00000000001;
+    constexpr Types::Vec3d SOFTENING_VEC3 = Types::Vec3d(SOFTENING_CONSTANT);
 	constexpr uint32_t WIDTH = 1280;
 	constexpr uint32_t HEIGHT = 720;
     constexpr uint32_t TEXTURE_COUNT = 1;
