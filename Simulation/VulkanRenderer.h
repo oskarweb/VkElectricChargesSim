@@ -2,11 +2,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_LEFT_HANDED
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
@@ -25,7 +20,6 @@
 #include <utility>
 #include <memory>
 #include <set>
-
 
 #include "Renderer.h"
 #include "extras.h"
@@ -54,7 +48,7 @@ public:
 		m_window = window;
 		glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 	}
-	
+
 	void init();
 	void drawFrame();
 	void recordImguiData(ImDrawData* data);
@@ -67,9 +61,9 @@ public:
 	const int& getFramebufferWidth() const { return m_framebufferWidth; }
 	const int& getFramebufferHeight() const { return m_frameBufferheight; }
 	const double& getDeltaTime() const { return m_deltaTime; }
-	double getDeltaTimeS() const { return m_deltaTime / 1000.0; } 
+	double getDeltaTimeS() const { return m_deltaTime / 1000.0; }
 
-	std::multimap<std::string, Renderable, RenderableComp> m_renderableObjects;
+	std::multimap<std::string, Renderable, RenderableComp> m_renderableObjects{};
 private:
 	void initImgui();
 	void cleanupSwapChain();
@@ -129,9 +123,9 @@ private:
 	//VARS
 	//std::vector<Renderable> m_renderableObjects;
 	uint64_t m_currentRenderableId = 0;
-	std::unordered_map<std::string, Mesh> m_meshes;
-	std::unordered_map<std::string, Material> m_materials;
-	std::vector<Texture> m_textures;
+	std::unordered_map<std::string, Mesh> m_meshes{};
+	std::unordered_map<std::string, Material> m_materials{};
+	std::vector<Texture> m_textures{};
 
 	std::vector<Mesh> testMesh;
 
@@ -146,11 +140,11 @@ private:
 	VkQueue m_presentQueue;
 
 	VkSwapchainKHR m_swapChain;
-	std::vector<VkImage> m_swapChainImages;
+	std::vector<VkImage> m_swapChainImages{};
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
-	std::vector<VkImageView> m_swapChainImageViews;
-	std::vector<VkFramebuffer> m_swapChainFramebuffers;
+	std::vector<VkImageView> m_swapChainImageViews{};
+	std::vector<VkFramebuffer> m_swapChainFramebuffers{};
 
 	VkRenderPass m_renderPass;
 	VkDescriptorSetLayout m_descriptorSetLayout;
@@ -158,11 +152,11 @@ private:
 	//VkPipeline m_graphicsPipeline;
 
 	VkCommandPool m_commandPool;
-	std::vector<VkCommandBuffer> m_commandBuffers;
+	std::vector<VkCommandBuffer> m_commandBuffers{};
 
-	std::vector<VkSemaphore> m_imageAvailableSemaphores;
-	std::vector<VkSemaphore> m_renderFinishedSemaphores;
-	std::vector<VkFence> m_inFlightFences;
+	std::vector<VkSemaphore> m_imageAvailableSemaphores{};
+	std::vector<VkSemaphore> m_renderFinishedSemaphores{};
+	std::vector<VkFence> m_inFlightFences{};
 
 	uint32_t m_currentFrame = 0;
 
@@ -176,9 +170,9 @@ private:
 	//VkBuffer m_indexBuffer;
 	//VkDeviceMemory m_indexBufferMemory;
 
-	std::vector<VkBuffer> m_uniformBuffers;
-	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-	std::vector<void*> m_uniformBuffersMapped;
+	std::vector<VkBuffer> m_uniformBuffers{};
+	std::vector<VkDeviceMemory> m_uniformBuffersMemory{};
+	std::vector<void*> m_uniformBuffersMapped{};
 
 	VkDescriptorPool m_descriptorPool;
 	std::vector<VkDescriptorSet> m_descriptorSets;
@@ -210,8 +204,8 @@ private:
 	VkDescriptorPool m_imguiDescriptorPool;
 	std::array<ImDrawData*, MAX_FRAMES_IN_FLIGHT> m_imguiDrawData{nullptr};
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastFrameTime;
-	double m_deltaTime;
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastFrameTime{};
+	double m_deltaTime = 0.0;
 };
 
 inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)

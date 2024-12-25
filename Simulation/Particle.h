@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <optional>
+#include <cmath>
 
 #include "RendererStructs.h"
 #include "Models.h"
@@ -12,85 +13,29 @@
 class Particle : public Node
 {
 public:
-	inline static const std::string& F_VECTOR_MODEL_NAME = "forceVector";
-	inline static const std::string& P_MODEL_NAME = "particle";
-	inline static constexpr glm::vec3 F_VECTOR_OFFEST = glm::vec3(0.0f, 0.0f, 0.0f);
-
-	Particle() : 
-		m_charge(0.0), 
-		m_mass(0.0), 
-		m_affectingForce(Types::Vec3d(0.0)),
-		m_acceleration(Types::Vec3d(0.0)),
-		m_velocity(Types::Vec3d(0.0)),
-		m_pos(Types::Vec3d(0.0)),
-		m_movable(true),
-		m_id(nextId++)
+	
+	struct State
 	{
-		uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<Types::Vec3d>(m_pos)));
-		uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::vec3(0.0f)));
-	}
+		Types::Vec3d affectingForce;
+		Types::Vec3d acceleration;
+		Types::Vec3d velocity;
+		Types::Vec3d pos;
+	};
 
-	Particle(
-		double charge,
-		double mass,
-		bool movable,
-		Types::Vec3d pos
-	) :
-		m_charge(charge),
-		m_mass(mass),
-		m_affectingForce(Types::Vec3d(0.0)),
-		m_acceleration(Types::Vec3d(0.0)),
-		m_velocity(Types::Vec3d(0.0)),
-		m_pos(pos),
-		m_movable(movable),
-		m_id(nextId++)
+	Particle();
+	Particle(double charge, double mass, bool movable, Types::Vec3d pos);
+	Particle(double charge, double mass, bool movable, Types::Vec3d affectingForce, Types::Vec3d pos);
+
+	void update(Types::Vec3d affectingForce, double time);
+	void update(double time);
+	void pushState();
+	void updateFromPrecalcPos(uint32_t idx);
+	void cleanup() override;
+
+	inline Types::Vec3d getCoulombForce(Particle& other)
 	{
-		uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<Types::Vec3d>(m_pos)));
-		uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::vec3(0.0f)));
-	}
-
-	Particle(
-		double charge,
-		double mass,
-		bool movable,
-		Types::Vec3d affectingForce,
-		Types::Vec3d pos
-	) : 
-		m_charge(charge), 
-		m_mass(mass),
-		m_affectingForce(affectingForce),
-		m_acceleration(affectingForce / mass),
-		m_velocity(Types::Vec3d(0.0)),
-		m_pos(pos),
-		m_movable(movable),
-		m_id(nextId++)
-	{
-		uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<Types::Vec3d>(m_pos)));
-		uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::vec3(0.0f)));
-		m_models[F_VECTOR_MODEL_NAME]->update(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::normalize(static_cast<glm::vec3>(m_affectingForce)) * 5.0f);
-	}
-
-	void update(Types::Vec3d affectingForce, double time)
-	{
-		if (!m_movable) { return; }
-		m_affectingForce = affectingForce;
-		m_acceleration = m_affectingForce / m_mass;
-		m_velocity += m_acceleration;
-		m_pos += m_velocity * time;
-
-		m_models[P_MODEL_NAME]->update(static_cast<Types::Vec3d>(m_pos));
-		m_models[F_VECTOR_MODEL_NAME]->update(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::normalize(static_cast<glm::vec3>(m_affectingForce) * 5.0f));
-	}
-
-	void update(double time)
-	{
-		if (!m_movable) { return; }
-		m_acceleration = m_affectingForce / m_mass;
-		m_velocity += m_acceleration;
-		m_pos += m_velocity * time;
-
-		m_models[P_MODEL_NAME]->update(static_cast<Types::Vec3d>(m_pos));
-		m_models[F_VECTOR_MODEL_NAME]->update(static_cast<Types::Vec3d>(m_pos), static_cast<Types::Vec3d>(m_affectingForce), glm::normalize(static_cast<glm::vec3>(m_affectingForce)) * 5.0f);
+		// F = k * |q1 * q2| / r^2
+		return (COULOMB_CONSTANT * m_charge * other.getCharge()) / (m_pos - other.getPos()).length2();
 	}
 
 	double&				chargeData() { return m_charge; }
@@ -120,6 +65,13 @@ public:
 	const bool isMovable() const { return m_movable; }
 	const uint64_t& getId() const { return m_id; }
 	static void resetId() { nextId = 0; }
+
+	inline static constexpr double ELECTRIC_CONSTANT = 8.854187817e-12; // [F / m]
+	inline static constexpr double COULOMB_CONSTANT = 8.9875517873681764e9; // 1 / (4 * pi * ELECTRIC_CONSTANT) [N * m^2 / C^2]
+
+	inline static const std::string& F_VECTOR_MODEL_NAME = "forceVector";
+	inline static const std::string& P_MODEL_NAME = "particle";
+	inline static constexpr glm::vec3 F_VECTOR_OFFEST = glm::vec3(0.0f, 0.0f, 0.0f);
 private:
 	double m_charge;
 	double m_mass;
@@ -128,6 +80,8 @@ private:
 	Types::Vec3d m_velocity;
 	Types::Vec3d m_pos;
 	bool m_movable;
+
+	std::vector<State> m_states;
 
 	uint64_t m_id = 0;
 	inline static uint64_t nextId = 0;

@@ -12,32 +12,13 @@ public:
 	Node& operator=(Node&&) = default;
 	Node() = default;
 
-	static void setRenderer(Renderer* renderer)
-	{
-		rendererHandle = renderer;
-	}
-
-	void cleanup()
-	{
-		for (auto& [name, model] : m_models)
-		{
-			model->cleanup(rendererHandle);
-		}
-	}
-
-    void uploadModel(const std::string& name, std::unique_ptr<Model> model) 
-    {
-		rendererHandle->addRenderables(model.get());
-		m_models.insert({ name, std::move(model) });
-    }
-	
-	Model* getModel(const std::string& name)
-	{
-		return m_models[name].get();
-	}
+	static void setRenderer(Renderer* renderer);
+	void uploadModel(const std::string& name, std::unique_ptr<Model> model);
+	Model* getModel(const std::string& name);
+    virtual void cleanup() = 0;
 
 protected:
-	std::map<std::string, std::unique_ptr<Model>> m_models;
+	std::map<std::string, std::unique_ptr<Model>> m_models{};
 private:
 	inline static Renderer* rendererHandle = nullptr;
 };
