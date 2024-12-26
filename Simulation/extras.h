@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <GLFW/glfw3.h>
 
@@ -27,25 +27,38 @@ namespace Types
         constexpr Vec3d(double x, double y, double z) : x(x), y(y), z(z) {}
         constexpr Vec3d(double n) : x(n), y(n), z(n) {}
     
-        constexpr double length2() const { return x * x + y * y + z * z; }
+        inline constexpr double length2(double softening = 0.0) const { return (x * x + y * y + z * z) + softening; }
+        inline double length(double softening = 0.0) const {
+            return std::sqrt(
+                    std::sqrt(x * x + softening * softening) +
+                    std::sqrt(y * y + softening * softening) +
+                    std::sqrt(z * z + softening * softening)
+            );
+        }
+        inline Vec3d normalized(double softening = 0.0) const { return (softening + *this) / this->length(softening); }
     
-        Vec3d operator+(const Vec3d& other) const   { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
-        Vec3d& operator+=(const Vec3d& other)       { x += other.x; y += other.y; z += other.z; return *this; }
-        Vec3d operator-(const Vec3d& other) const   { return Vec3d{ x - other.x, y - other.y, z - other.z }; }
-        Vec3d& operator-=(const Vec3d& other)       { x -= other.x; y -= other.y; z -= other.z; return *this; }
-        Vec3d operator*(double scalar) const        { return Vec3d{ x * scalar, y * scalar, z * scalar }; }
-        Vec3d& operator*=(double scalar)            { x *= scalar; y *= scalar; z *= scalar; return *this; }
-        Vec3d operator/(double scalar) const        { return Vec3d{ x / scalar, y / scalar, z / scalar }; }
-        Vec3d& operator/=(double scalar)            { x /= scalar; y /= scalar; z /= scalar; return *this; }
+        inline constexpr Vec3d operator+(const Vec3d& other) const   { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
+        inline constexpr Vec3d& operator+=(const Vec3d& other)       { x += other.x; y += other.y; z += other.z; return *this; }
+        inline constexpr Vec3d operator-(const Vec3d& other) const   { return Vec3d{ x - other.x, y - other.y, z - other.z }; }
+        inline constexpr Vec3d& operator-=(const Vec3d& other)       { x -= other.x; y -= other.y; z -= other.z; return *this; }
+        inline constexpr Vec3d operator*(double scalar) const        { return Vec3d{ x * scalar, y * scalar, z * scalar }; }
+        inline constexpr Vec3d& operator*=(double scalar)            { x *= scalar; y *= scalar; z *= scalar; return *this; }
+        inline constexpr Vec3d operator/(double scalar) const        { return Vec3d{ x / scalar, y / scalar, z / scalar }; }
+        inline constexpr Vec3d& operator/=(double scalar)            { x /= scalar; y /= scalar; z /= scalar; return *this; }
     
-        operator glm::vec3() const { return glm::vec3(x, y, z); }
+        explicit operator glm::vec3() const { return glm::vec3(x, y, z); }
     
         template<typename T>
         T operator+(const T& other) const
         {
             return T{ static_cast<decltype(other.x)>(x) + other.x, static_cast<decltype(other.y)>(y) + other.y, static_cast<decltype(other.z)>(z) + other.z };
         }
+
+		friend inline constexpr Vec3d operator*(double scalar, const Vec3d& v) { return v * scalar; }
+        friend inline constexpr Vec3d operator+(double scalar, const Vec3d& v) { return Vec3d{ v.x + scalar, v.y + scalar, v.z + scalar }; }
     };
+
+	inline constexpr double operator*(const Vec3d& v) { return v.x + v.y + v.z; }
 
     struct ImGuiWindowInfo
     {
@@ -56,7 +69,7 @@ namespace Types
 
 namespace Constants
 {
-    constexpr double SOFTENING_CONSTANT = 0.00000000001;
+    constexpr double SOFTENING_CONSTANT = 0.0000001;
     constexpr Types::Vec3d SOFTENING_VEC3 = Types::Vec3d(SOFTENING_CONSTANT);
 	constexpr uint32_t WIDTH = 1280;
 	constexpr uint32_t HEIGHT = 720;
@@ -73,6 +86,20 @@ namespace Constants
 	const std::filesystem::path SHADERS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\shaders";
 	const std::filesystem::path TEXTURES_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\textures";
 	const std::filesystem::path MODELS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\models";
+    const std::filesystem::path FONTS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\fonts";
+
+    template<typename T>
+    constexpr T unitPrefixFactor(const char prefix)
+    {
+		switch(prefix)
+		{
+		    case 'n': return 1e-9;
+		    //case 'μ': return 1e-6;
+		    case 'm': return 1e-3;
+	    	case 'k': return 1e3;
+		    default: return 1.0;
+		}
+    }
 }
 
 namespace Helpers

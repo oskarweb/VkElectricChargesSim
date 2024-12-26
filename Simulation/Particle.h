@@ -26,18 +26,23 @@ public:
 	Particle(double charge, double mass, bool movable, Types::Vec3d pos);
 	Particle(double charge, double mass, bool movable, Types::Vec3d affectingForce, Types::Vec3d pos);
 
+	void update();
 	void update(Types::Vec3d affectingForce, double time);
 	void update(double time);
 	void pushState();
+	void setInitialState();
+	inline void clearStates() { m_states.clear(); }
 	void updateFromPrecalcPos(uint32_t idx);
 	void cleanup() override;
 
-	inline Types::Vec3d getCoulombForce(Particle& other)
+	inline Types::Vec3d getCoulombForce(Particle& other) const
 	{
 		// F = k * |q1 * q2| / r^2
-		return (COULOMB_CONSTANT * m_charge * other.getCharge()) / (m_pos - other.getPos()).length2();
+		Types::Vec3d distanceV = m_pos - other.getPos();
+		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized(Constants::SOFTENING_CONSTANT) / distanceV.length2(Constants::SOFTENING_CONSTANT * 1e7);
 	}
 
+	State&				getInitialState() { return m_initialState; }
 	double&				chargeData() { return m_charge; }
 	double&				massData() { return m_mass; }
 	Types::Vec3d&		affectingForceData() { return m_affectingForce; }
@@ -81,6 +86,7 @@ private:
 	Types::Vec3d m_pos;
 	bool m_movable;
 
+	State m_initialState;
 	std::vector<State> m_states;
 
 	uint64_t m_id = 0;
