@@ -1,4 +1,4 @@
-#include "Simulation.h"
+﻿#include "Simulation.h"
 
 void Simulation::initWindow()
 {
@@ -28,6 +28,12 @@ void Simulation::removeParticle(std::vector<Particle>::iterator it)
 void Simulation::calculateParticlePositions()
 {
 	int steps = static_cast<int>(m_simulationTime / PARTICLE_TIME_STEP_S);
+	
+	for (auto& particle : m_particles)
+	{
+		particle.setInitialState();
+	}
+
 	for (int i = 0; i < steps; ++i)
 	{
 		for (auto& particle : m_particles)
@@ -63,6 +69,12 @@ void Simulation::run()
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	ImFontConfig config;
+	config.OversampleH = 1;
+	config.OversampleV = 1;
+	std::filesystem::path arimoPath = Constants::FONTS_PATH / "arimo" / "Arimo-Regular.ttf";
+	io.Fonts->AddFontFromFileTTF(arimoPath.string().c_str(), 16.0f, &config, io.Fonts->GetGlyphRangesGreek());
+	io.Fonts->Build();
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_CursorPosCallback(m_window, Input::mousePos.x, Input::mousePos.y);
 
@@ -87,7 +99,15 @@ void Simulation::run()
 		displayParticleListWindow();
 		displayParticleAddWindow();
 
-		if (not m_paused)
+		if (not m_paused && m_simulateFromPrecalculatedSteps)
+		{
+			m_elapsedTime = std::clamp(m_elapsedTime + m_rendererHandle.getDeltaTime(), 0.0, m_simulationTime);
+			if (m_elapsedTime == m_simulationTime)
+			{
+				m_paused = true;
+			}
+		}
+		else if (not m_paused)
 		{
 			m_elapsedTime += m_rendererHandle.getDeltaTime();
 		}
@@ -154,8 +174,17 @@ void Simulation::displayMainCtrlWindow()
 	
 	if (ImGui::Button("Start") && m_paused)
 	{
+		if (m_elapsedTime == m_simulationTime)
+		{
+			restartSimulation();
+			m_elapsedTime = 0.0;
+		}
 		if (m_simulateFromPrecalculatedSteps)
 		{
+			for (auto& particle : m_particles)
+			{
+				particle.clearStates();
+			}
 			calculateParticlePositions();
 		}
 		m_paused = false;
@@ -210,20 +239,25 @@ void Simulation::displayParticleListWindow()
 				particlesToRemove.push_back(it);
 			}
             ImGui::SameLine();
-            if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str()) && not m_simulateFromPrecalculatedSteps)
+            if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str()) && 
+				((m_simulateFromPrecalculatedSteps && (m_elapsedTime == 0.0 || m_elapsedTime == m_simulationTime)) || not m_simulateFromPrecalculatedSteps)
+			)
             {
-                double mass = particle.getMass();
-                ImGui::Text("Mass: ");
-                ImGui::InputDouble(std::format("##mass{}", particle.getId()).c_str(), &mass);
-                ImGui::Text("Affecting Force: ");
-                ImGui::SliderScalar(std::format("##affectingForce{}x", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().x, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
-                ImGui::SliderScalar(std::format("##affectingForce{}y", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().y, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
-                ImGui::SliderScalar(std::format("##affectingForce{}z", particle.getId()).c_str(), ImGuiDataType_Double, &particle.affectingForceData().z, &SLIDER_MIN_AFFECTING_FORCE, &SLIDER_MAX_AFFECTING_FORCE);
-                ImGui::Text("Position: ");
-                ImGui::SliderScalar(std::format("##pos{}x", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().x, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
-                ImGui::SliderScalar(std::format("##pos{}y", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().y, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
-                ImGui::SliderScalar(std::format("##pos{}z", particle.getId()).c_str(), ImGuiDataType_Double, &particle.posData().z, &SLIDER_MIN_POS, &SLIDER_MAX_POS);
-                particle.setMass(mass);
+				ImGui::Text("Charge: ");
+				ImGui::SameLine();
+				ImGui::InputDouble(std::format("##massl{}", particle.getId()).c_str(), &particle.chargeData());
+				ImGui::Text("Mass: ");
+				ImGui::SameLine();
+				ImGui::InputDouble(std::format("##chargel{}", particle.getId()).c_str(), &particle.massData());
+				ImGui::Text("X: ");
+				ImGui::SameLine();
+				ImGui::InputDouble(std::format("##posxl{}", particle.getId()).c_str(), &particle.posData().x);
+				ImGui::Text("Y: ");
+				ImGui::SameLine();
+				ImGui::InputDouble(std::format("##posyl{}", particle.getId()).c_str(), &particle.posData().y);
+				ImGui::Text("Z: ");
+				ImGui::SameLine();
+				ImGui::InputDouble(std::format("##poszl{}", particle.getId()).c_str(), &particle.posData().z);
             }
 			ImGui::TableSetColumnIndex(1);
 			ImGui::Text(Helpers::vectorFormat(particle.getPos()).c_str());
@@ -261,15 +295,34 @@ void Simulation::displayParticleAddWindow()
 	static bool movable = DEFAULT_PARTICLE_MOVABLE;
 	static Types::Vec3d pos = DEFAULT_PARTICLE_POS;
 
-	ImGui::Text("Charge: ");
+	static int chargePrefixIdx = 2;
+	static int massPrefixIdx = 3;
+	static int distancePrefixIdx = 0;
+
+	const std::string& chargeText = std::format("Charge [{}C]", UNIT_PREFIXES[chargePrefixIdx] == "none" ? "" : UNIT_PREFIXES[chargePrefixIdx]);
+	ImGui::Text(chargeText.c_str());
+	ImGui::SameLine();
+	displayUnitSelector(chargeText, chargePrefixIdx);
 	ImGui::InputDouble("##charge", &charge);
 	
-	ImGui::Text("Mass: ");
+	const std::string& massText = std::format("Mass [{}g]", UNIT_PREFIXES[massPrefixIdx] == "none" ? "" : UNIT_PREFIXES[massPrefixIdx]);
+	ImGui::Text(massText.c_str());
+	ImGui::SameLine();
+	displayUnitSelector(massText, massPrefixIdx);
 	ImGui::InputDouble("##mass", &mass);
 
-	ImGui::Text("Position: ");
+	const std::string& distanceText = std::format("Pos [{}m]", UNIT_PREFIXES[distancePrefixIdx] == "none" ? "" : UNIT_PREFIXES[distancePrefixIdx]);
+	ImGui::Text(distanceText.c_str());
+	ImGui::SameLine();
+	displayUnitSelector(distanceText, distancePrefixIdx);
+	ImGui::Text("X: ");
+	ImGui::SameLine();
 	ImGui::InputDouble("##posx", &pos.x);
+	ImGui::Text("Y: ");
+	ImGui::SameLine();
 	ImGui::InputDouble("##posy", &pos.y);
+	ImGui::Text("Z: ");
+	ImGui::SameLine();
 	ImGui::InputDouble("##posz", &pos.z);
 	
 	ImGui::Text("Movable: ");
@@ -277,12 +330,57 @@ void Simulation::displayParticleAddWindow()
 	
 	if (ImGui::Button("Add") && ((m_paused && m_simulateFromPrecalculatedSteps) || (not m_simulateFromPrecalculatedSteps)))
 	{
-		addParticle(Particle(charge, mass, movable, Types::Vec3d(pos.x, pos.y, pos.z)));
+		addParticle(Particle(
+			charge * Constants::unitPrefixFactor<double>(UNIT_PREFIXES[chargePrefixIdx] == "none" ? ' ' : UNIT_PREFIXES[chargePrefixIdx][0]),
+			mass * Constants::unitPrefixFactor<double>(UNIT_PREFIXES[massPrefixIdx] == "none" ? ' ' : UNIT_PREFIXES[massPrefixIdx][0]) / 1000.0,
+			movable, 
+			Types::Vec3d(pos.x , pos.y, pos.z) * Constants::unitPrefixFactor<double>(UNIT_PREFIXES[distancePrefixIdx] == "none" ? ' ' : UNIT_PREFIXES[distancePrefixIdx][0])
+		));
 		charge = DEFAULT_PARTICLE_CHARGE;
 		mass = DEFAULT_PARTICLE_MASS;
 		movable = DEFAULT_PARTICLE_MOVABLE;
 		pos = DEFAULT_PARTICLE_POS;
 	}
+
+	if (ImGui::Button("Preset1") && ((m_paused && m_simulateFromPrecalculatedSteps) || (not m_simulateFromPrecalculatedSteps)))
+	{
+		for (const auto& particleConfig : PARTICLE_PRESET1)
+		{
+			addParticle(Particle(
+				particleConfig.charge,
+				particleConfig.mass,
+				particleConfig.movable,
+				particleConfig.pos
+			));
+		}
+	}
+
+	if (ImGui::Button("Preset2") && ((m_paused && m_simulateFromPrecalculatedSteps) || (not m_simulateFromPrecalculatedSteps)))
+	{
+		for (const auto& particleConfig : PARTICLE_PRESET2)
+		{
+			addParticle(Particle(
+				particleConfig.charge,
+				particleConfig.mass,
+				particleConfig.movable,
+				particleConfig.pos
+			));
+		}
+	}
+
+	if (ImGui::Button("Preset3") && ((m_paused && m_simulateFromPrecalculatedSteps) || (not m_simulateFromPrecalculatedSteps)))
+	{
+		for (const auto& particleConfig : PARTICLE_PRESET3)
+		{
+			addParticle(Particle(
+				particleConfig.charge,
+				particleConfig.mass,
+				particleConfig.movable,
+				particleConfig.pos
+			));
+		}
+	}
+
 
     ImGui::End();
 }
@@ -302,5 +400,31 @@ void Simulation::resetAll()
 
 void Simulation::restartSimulation()
 {
-	resetAll();
+	m_paused = true;
+	m_elapsedTime = 0.0;
+	for (auto& particle : m_particles)
+	{
+		particle.setAffectingForce(particle.getInitialState().affectingForce);
+		particle.setAcceleration(particle.getInitialState().acceleration);
+		particle.setVelocity(particle.getInitialState().velocity);
+		particle.setPos(particle.getInitialState().pos);
+		particle.update();
+	}
+}
+
+void Simulation::displayUnitSelector(const std::string& unit, int& prefixIdx)
+{
+	if (ImGui::BeginCombo(("##"+unit).c_str(), UNIT_PREFIXES[prefixIdx]))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(UNIT_PREFIXES); n++)
+		{
+			const bool is_selected = (prefixIdx == n);
+			const char* selectableText = UNIT_PREFIXES[n] == "none" ? "" : UNIT_PREFIXES[n];
+			if (ImGui::Selectable(UNIT_PREFIXES[n], is_selected))
+			{
+				prefixIdx = n;
+			}
+		}
+		ImGui::EndCombo();
+	}
 }
