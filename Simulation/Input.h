@@ -26,7 +26,8 @@ public:
 		{GLFW_KEY_S, Key(false, false)},
 		{GLFW_KEY_A, Key(false, false)},
 		{GLFW_KEY_D, Key(false, false)},
-		{GLFW_KEY_C, Key(false, false)}
+		{GLFW_KEY_C, Key(false, false)},
+		{GLFW_KEY_F, Key(false, false)}
 	};
 
 	inline static Point mousePos = { 0.0, 0.0 };

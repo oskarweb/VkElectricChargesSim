@@ -16,7 +16,7 @@ void Simulation::addParticle(Particle&& particle)
     auto& particleRef = m_particles.emplace_back(std::move(particle));
 }
 
-void Simulation::removeParticle(std::vector<Particle>::iterator it) 
+void Simulation::removeParticle(std::vector<Particle>::iterator& it) 
 {
     if (it != m_particles.end())
     {
@@ -25,16 +25,66 @@ void Simulation::removeParticle(std::vector<Particle>::iterator it)
     }
 }
 
-void Simulation::calculateParticlePositions()
+void Simulation::launchParticleThreads()
 {
-	int steps = static_cast<int>(m_simulationTime / PARTICLE_TIME_STEP_S);
-	
-	for (auto& particle : m_particles)
+	for (uint32_t i = 0; i < m_threads.size(); ++i)
 	{
-		particle.setInitialState();
+		uint32_t minIdx = i * static_cast<uint32_t>(m_particles.size()) / NUM_THREADS;
+		uint32_t maxIdx = (i + 1) * static_cast<uint32_t>(m_particles.size()) / NUM_THREADS;
+        m_threads[i] = std::jthread(&Simulation::calculateParticlePostionsThreaded, this, std::stop_token{}, minIdx, maxIdx);
+	}
+}
+
+void Simulation::calculateParticlePostionsThreaded(std::stop_token stopToken, uint32_t minIdx, uint32_t maxIdx)
+{
+	while (m_elapsedTime <= m_simulationTime && not m_paused)
+	{
+		if (stopToken.stop_requested())
+		{
+			std::cout << "thread stop requested" << '\n';
+		}
+		for (uint32_t i = minIdx; i < maxIdx; ++i)
+		{
+			calculatePositionsForSingleParticle(&m_particles[i]);
+		}
+	}
+}
+
+void Simulation::calculatePositionsForSingleParticle(Particle* particle)
+{
+	uint32_t stepIdx = particle->getMaxStep() + 1;
+
+	if (m_mutualMaxStep < (stepIdx - 1))
+	{
+		return;
 	}
 
-	for (int i = 0; i < steps; ++i)
+	if (particle->getBufferedStepCount() >= STEPS_BUFFERED_AT_ONCE)
+	{
+		return;
+	}
+
+	std::unique_lock<std::mutex> lk(particle->mutexData());
+
+	Types::Vec3d force{ 0.0 };
+	for (auto& particleOther : m_particles)
+	{
+		if (particle->getId() != particleOther.getId())
+		{
+			force += particle->getCoulombForce(stepIdx - 1, particleOther);
+		}
+	}
+	auto acc = force / particle->getMass();
+	auto vel = particle->statesData()[stepIdx - 1].velocity + (particle->statesData()[stepIdx - 1].acceleration * m_timeStep);
+	auto pos = particle->statesData()[stepIdx - 1].pos + (particle->statesData()[stepIdx - 1].velocity * m_timeStep);
+	particle->pushState(stepIdx, force, acc, vel, pos);
+
+}
+
+void Simulation::calculateParticlePositions()
+{
+	uint32_t m_mutualMaxStep = std::min(m_maxUsedStep + 1001, static_cast<uint32_t>(m_simulationTime / m_timeStep) + 1);
+	for (uint32_t i = m_maxUsedStep + 1; i < m_mutualMaxStep; ++i)
 	{
 		for (auto& particle : m_particles)
 		{
@@ -43,14 +93,38 @@ void Simulation::calculateParticlePositions()
 			{
 				if (particle.getId() != particle_other.getId())
 				{
-					force += particle.getCoulombForce(particle_other);
+					force += particle.getCoulombForce(i - 1, particle_other);
+				}
+			}
+			auto acc = force / particle.getMass();
+			auto vel = particle.statesData()[i - 1].velocity + acc * m_timeStep;
+			auto pos = particle.statesData()[i - 1].pos + vel * m_timeStep;
+			particle.pushState(i, force, acc, vel, pos);
+		}
+	}
+}
+
+void Simulation::calculateAllParticlePositions()
+{
+	uint32_t steps = static_cast<uint32_t>(m_simulationTime / m_timeStep) + 1;
+
+	for (uint32_t i = 1; i < steps; ++i)
+	{
+		for (auto& particle : m_particles)
+		{
+			Types::Vec3d force{ 0.0 };
+			for (auto& particle_other : m_particles)
+			{
+				if (particle.getId() != particle_other.getId())
+				{
+					force += particle.getCoulombForce(i - 1, particle_other);
 				}
 			}
 			particle.setAffectingForce(force);
 			particle.setAcceleration(force / particle.getMass());
-			particle.setVelocity(particle.getVelocity() + (particle.getAcceleration() * PARTICLE_TIME_STEP_S));
-			particle.setPos(particle.getPos() + (particle.getVelocity() * PARTICLE_TIME_STEP_S));
-			particle.pushState();
+			particle.setVelocity(particle.getVelocity() + (particle.getAcceleration() * m_timeStep));
+			particle.setPos(particle.getPos() + (particle.getVelocity() * m_timeStep));
+			particle.pushState(i);
 		}
 	}
 }
@@ -86,7 +160,7 @@ void Simulation::run()
 	while (!glfwWindowShouldClose(m_window))
 	{
 		glfwPollEvents();
-		m_camera.update();
+		m_camera.update(static_cast<float>(m_rendererHandle.getDeltaTime()));
 		m_rendererHandle.drawFrame();
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -95,43 +169,87 @@ void Simulation::run()
 
 		ImGui::ShowDemoWindow();
 
-		displayMainCtrlWindow();
-		displayParticleListWindow();
-		displayParticleAddWindow();
-
-		if (not m_paused && m_simulateFromPrecalculatedSteps)
+		if (m_threadedCalculation)
 		{
+			m_mutualMaxStep = UINT32_MAX;
+			for (auto& particle : m_particles)
+			{
+				m_mutualMaxStep = std::min(m_mutualMaxStep.load(), particle.getMaxStep());
+			}
+			m_mutualStepCv.notify_all();
+		}
+
+		if (not m_precalculateAll && not m_threadedCalculation && m_simulateFromPrecalculatedSteps && not m_paused)
+		{
+			m_maxUsedStep = m_elapsedTime / m_timeStep;
+			calculateParticlePositions();
+			updatePostions();
 			m_elapsedTime = std::clamp(m_elapsedTime + m_rendererHandle.getDeltaTime(), 0.0, m_simulationTime);
 			if (m_elapsedTime == m_simulationTime)
 			{
 				m_paused = true;
 			}
-		}
-		else if (not m_paused)
-		{
-			m_elapsedTime += m_rendererHandle.getDeltaTime();
+			for (auto& particle : m_particles)
+			{
+				std::erase_if(particle.statesData(), [this](const auto& item)
+				{
+						auto const& [key, value] = item;
+						return key < m_maxUsedStep;
+				});
+			}
 		}
 
-		if (not m_paused && m_simulateFromPrecalculatedSteps)
+		if (m_precalculateAll && not m_threadedCalculation && m_simulateFromPrecalculatedSteps && not m_paused)
 		{
-			for (auto& particle : m_particles)
+			if (m_skipUpdate)
 			{
-				if (particle.isMovable())
+				m_skipUpdate = false;
+			}
+			else
+			{
+				m_maxUsedStep = m_elapsedTime / m_timeStep;
+				updatePostions();
+				m_elapsedTime = std::clamp(m_elapsedTime + m_rendererHandle.getDeltaTime(), 0.0, m_simulationTime);
+				if (m_elapsedTime == m_simulationTime)
 				{
-					particle.updateFromPrecalcPos(static_cast<uint32_t>(m_elapsedTime / PARTICLE_TIME_STEP_S));
+					m_paused = true;
 				}
 			}
 		}
-		else if (not m_paused)
+		
+		if (not m_paused && not m_simulateFromPrecalculatedSteps) // Real time update loop
 		{
-			for (auto& particle : m_particles)
+			if (m_skipUpdate)
 			{
-				if (particle.isMovable())
+				m_skipUpdate = false;
+			}
+			else
+			{
+				for (auto& particle : m_particles)
 				{
-					particle.update(m_elapsedTime);
+					if (particle.isMovable())
+					{
+						particle.update(m_elapsedTime);
+					}
 				}
 			}
 		}
+		
+		if (not m_paused && not m_simulateFromPrecalculatedSteps)
+		{
+			if (m_skipUpdate)
+			{
+				m_skipUpdate = false;
+			}
+			else
+			{
+				m_elapsedTime += m_rendererHandle.getDeltaTime();
+			}
+		}
+
+		displayMainCtrlWindow();
+		displayParticleListWindow();
+		displayParticleAddWindow();
 
 		ImGui::Render();
 		m_rendererHandle.recordImguiData(ImGui::GetDrawData());
@@ -144,6 +262,59 @@ void Simulation::run()
 	m_rendererHandle.cleanup();
 	glfwDestroyWindow(m_window);
 	glfwTerminate();
+}
+
+void Simulation::updatePositionsThreaded()
+{
+	if (not m_paused && m_simulateFromPrecalculatedSteps && m_isHung) // Handle case when there was a lack of particle step data in previous iteration
+	{
+		m_isHung = false;
+		for (std::vector<Particle>::iterator it = m_hungIt; it != m_particles.end(); it++)
+		{
+			std::unique_lock<std::mutex> lk((*it).mutexData());
+			if (not (*it).isMovable())
+			{
+				continue;
+			}
+			bool updateSuccess = (*it).updateFromPrecalcPos(static_cast<uint32_t>(m_elapsedTime / m_timeStep));
+			if (not updateSuccess && (m_elapsedTime <= m_simulationTime))
+			{
+				m_hungIt = it;
+				m_isHung = true;
+				break;
+			}
+		}
+	}
+	else if (not m_paused && m_simulateFromPrecalculatedSteps && not m_isHung)
+	{
+		for (auto it = m_particles.begin(); it != m_particles.end(); it++) // Loop for precalculated simulation
+		{
+			std::unique_lock<std::mutex> lk((*it).mutexData());
+			if (not (*it).isMovable())
+			{
+				continue;
+			}
+			bool updateSuccess = (*it).updateFromPrecalcPos(static_cast<uint32_t>(m_elapsedTime / m_timeStep));
+			if (not updateSuccess && (m_elapsedTime <= m_simulationTime))
+			{
+				m_hungIt = it;
+				m_isHung = true;
+				break;
+			}
+		}
+	}
+}
+
+void Simulation::updatePostions()
+{
+	for (auto it = m_particles.begin(); it != m_particles.end(); it++)
+	{
+		if (not (*it).isMovable())
+		{
+			continue;
+		}
+		bool updateSuccess = (*it).updateFromPrecalcPos(static_cast<uint32_t>(m_maxUsedStep));
+	}
 }
 
 void Simulation::displayMainCtrlWindow()
@@ -162,32 +333,31 @@ void Simulation::displayMainCtrlWindow()
 	ImVec2 mousePositionAbsolute = ImGui::GetMousePos();
 	ImVec2 screenPositionAbsolute = ImGui::GetItemRectMin();
 	ImVec2 mousePositionRelative = ImVec2(mousePositionAbsolute.x - screenPositionAbsolute.x, mousePositionAbsolute.y - screenPositionAbsolute.y);
-	ImGui::Text("Time Elapsed: %fs", m_elapsedTime);
+	ImGui::Text("Time Elapsed: %fs", m_elapsedTime.load());
 	ImGui::Text("Position: %f, %f", mousePositionRelative.x, mousePositionRelative.y);
 	ImGui::Text("Own Delta Time: %f", m_rendererHandle.getDeltaTime());
 	ImGui::Text("ImGui Delta Time: %f", ImGui::GetIO().DeltaTime);
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-	ImGui::InputDouble("Simulation Time (s)", &m_simulationTime);
+	static double simulationTime = DEFAULT_SIMULATION_TIME;
+	static double timeStep = DEFAULT_TIME_STEP;
+
+	ImGui::InputDouble("Sim Time (s)", &simulationTime);
+
+	ImGui::InputDouble("Time step(s)", &timeStep);
 
 	ImGui::Checkbox("Simulate from precalculated steps", &m_simulateFromPrecalculatedSteps);
 	
+	ImGui::Checkbox("Precalculate all steps", &m_precalculateAll);
+
+	ImGui::Checkbox("Multithreading(EXPERIMENTAL)", &m_threadedCalculation);
+
 	if (ImGui::Button("Start") && m_paused)
 	{
-		if (m_elapsedTime == m_simulationTime)
-		{
-			restartSimulation();
-			m_elapsedTime = 0.0;
-		}
-		if (m_simulateFromPrecalculatedSteps)
-		{
-			for (auto& particle : m_particles)
-			{
-				particle.clearStates();
-			}
-			calculateParticlePositions();
-		}
-		m_paused = false;
+		m_simulationTime = simulationTime;
+		m_timeStep = timeStep;
+		m_skipUpdate = true;
+		startSimulation();
 	}
 
 	if (ImGui::Button("Pause") && not m_paused)
@@ -195,17 +365,74 @@ void Simulation::displayMainCtrlWindow()
 		m_paused = true;
 	}
 
-	if (ImGui::Button("Restart Simulation"))
+	ImGui::SameLine();
+	ImGui::Text("Paused: %s", m_paused ? "true" : "false");
+	ImGui::SameLine();
+	ImGui::Text("Hung: %s", m_isHung ? "true" : "false");
+
+	if (ImGui::Button("Resume") && m_paused)
+	{
+		m_paused = false;
+	}
+
+	if (ImGui::Button("Restart Simulation") && m_paused) 
 	{
 		restartSimulation();
 	}
 
-	if (ImGui::Button("Reset All"))
+	if (ImGui::Button("Reset All") && m_paused)
 	{
 		resetAll();
 	}
 
 	ImGui::End();
+}
+
+void Simulation::startSimulation()
+{
+	if (m_elapsedTime == m_simulationTime)
+	{
+		restartSimulation();
+		m_elapsedTime = 0.0;
+	}
+	if (m_simulateFromPrecalculatedSteps && m_particles.size() > 0 && not m_precalculateAll)
+	{
+		for (auto& particle : m_particles)
+		{
+			if (particle.initialStateData())
+			{
+				particle.setAffectingForce(particle.getInitialState().affectingForce);
+				particle.setAcceleration(particle.getInitialState().acceleration);
+				particle.setVelocity(particle.getInitialState().velocity);
+				particle.setPos(particle.getInitialState().pos);
+				particle.update();
+			}
+			particle.clearStates();
+			particle.pushState(0);
+		}
+		if (m_threadedCalculation)
+		{
+			launchParticleThreads();
+		}
+	}
+	else if (m_simulateFromPrecalculatedSteps && m_particles.size() > 0 && m_precalculateAll)
+	{
+		for (auto& particle : m_particles)
+		{
+			if (particle.initialStateData())
+			{
+				particle.setAffectingForce(particle.getInitialState().affectingForce);
+				particle.setAcceleration(particle.getInitialState().acceleration);
+				particle.setVelocity(particle.getInitialState().velocity);
+				particle.setPos(particle.getInitialState().pos);
+				particle.update();
+			}
+			particle.clearStates();
+			particle.pushState(0);
+		}
+		calculateAllParticlePositions();
+	}
+	m_paused = false;
 }
 
 void Simulation::displayParticleListWindow()
@@ -381,35 +608,62 @@ void Simulation::displayParticleAddWindow()
 		}
 	}
 
-
     ImGui::End();
 }
 
 void Simulation::resetAll()
 {
+	m_skipUpdate = true;
+	m_paused = true;
+	m_mutualMaxStep = 0;
+	m_elapsedTime = 0.0;
+	if (m_threadedCalculation)
+	{
+		for (int i = 0; i < m_threads.size(); i++)
+		{
+			if (m_threads[i].joinable()) {
+				m_threads[i].join();
+			}
+		}
+	}
+
 	for (auto& particle : m_particles)
 	{
 		particle.cleanup();
 	}
-	m_elapsedTime = 0.0;
 	m_particles.clear();
-	m_paused = true;
 	m_simulateFromPrecalculatedSteps = true;
 	Particle::resetId();
 }
 
 void Simulation::restartSimulation()
 {
+	m_skipUpdate = true;
 	m_paused = true;
+	m_mutualMaxStep = 0;
 	m_elapsedTime = 0.0;
+
+	if (m_threadedCalculation)
+	{
+		for (int i = 0; i < m_threads.size(); i++)
+		{
+			if (m_threads[i].joinable()) {
+				m_threads[i].join();
+			}
+		}
+	}
+
 	for (auto& particle : m_particles)
 	{
+		particle.statesData().clear();
+		particle.setMaxStep(0);
 		particle.setAffectingForce(particle.getInitialState().affectingForce);
 		particle.setAcceleration(particle.getInitialState().acceleration);
 		particle.setVelocity(particle.getInitialState().velocity);
 		particle.setPos(particle.getInitialState().pos);
 		particle.update();
 	}
+
 }
 
 void Simulation::displayUnitSelector(const std::string& unit, int& prefixIdx)

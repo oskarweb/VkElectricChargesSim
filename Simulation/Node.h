@@ -7,9 +7,9 @@ class Node
 {
 public:
 	Node(const Node&) = delete;
-	Node& operator=(const Node&) = delete;
-	Node(Node&&) = default;
-	Node& operator=(Node&&) = default;
+	//Node& operator=(const Node&) = delete;
+	Node(Node&&) noexcept = default;
+	Node& operator=(Node&&) noexcept = default;
 	Node() = default;
 
 	static void setRenderer(Renderer* renderer);

@@ -1,6 +1,9 @@
 ﻿#pragma once
 
 #include <format>
+#include <functional>
+#include <thread>
+#include <mutex>
 
 #include "VulkanRenderer.h"
 #include "Camera.h"
@@ -13,22 +16,39 @@ class Simulation
 public:
 	Simulation(VulkanRenderer& rendererHandle) : 
 		m_rendererHandle(rendererHandle),
-		m_camera(Camera(glm::vec3(2.0f, 2.0f, 1.0f), 0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f)))
+		m_camera(Camera(glm::vec3(-10.0f, -10.0f, -10.0f), 0.0f, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f))),
+		m_threads(NUM_THREADS)
 	{
+	}
+
+	~Simulation()
+	{
+		for (auto& thread : m_threads)
+		{
+			thread.join();
+		}
 	}
 
 	void run();
 
 private:
+	void updatePostions();
+	void updatePositionsThreaded();
+	void calculateAllParticlePositions();
 	void calculateParticlePositions();
+	void launchParticleThreads();
+	void calculateParticlePostionsThreaded(std::stop_token stopToken, uint32_t minIdx, uint32_t maxIdx);
+	void calculatePositionsForSingleParticle(Particle* particle);
 	void displayMainCtrlWindow();
 	void displayParticleListWindow();
 	void displayParticleAddWindow();
 	void addParticle(Particle&& particle);
-	void removeParticle(std::vector<Particle>::iterator it);
+	void removeParticle(std::vector<Particle>::iterator& it);
+	void startSimulation();
 	void restartSimulation();
 	void resetAll();
 	void initWindow();
+	uint32_t getMaxStepsBuffered() { return 1'000'000'000u / static_cast<uint32_t>(sizeof(Particle::State)) / static_cast<uint32_t>(m_particles.size()); }
 	static inline std::string particleHeaderText(const Particle& particle);
 	static inline void displayUnitSelector(const std::string& unit, int& prefixIdx);
 
@@ -38,19 +58,33 @@ private:
 	VulkanRenderer& m_rendererHandle;
 	Camera m_camera;
 
+	bool m_skipUpdate = true;
 	bool m_simulateFromPrecalculatedSteps = true;
-	bool m_paused = true;
+	bool m_precalculateAll = false;
+	bool m_threadedCalculation = false;
+	std::atomic<bool> m_paused = true;
 	double m_startTime = 0.0;
-	double m_elapsedTime = 0.0;
-	double m_simulationTime = 0.0;
+	std::atomic<double> m_elapsedTime = 0.0;
+	double m_simulationTime = DEFAULT_SIMULATION_TIME;
+	double m_timeStep = DEFAULT_TIME_STEP;
+	
+	bool m_isHung = false;
+	std::vector<Particle>::iterator m_hungIt;
+
+	std::vector<std::jthread> m_threads;
+	std::atomic<uint32_t> m_mutualMaxStep = 0;
+	std::atomic<uint32_t> m_maxUsedStep = 0;
+	std::condition_variable m_mutualStepCv;
 
 	Types::ImGuiWindowInfo m_mainCtrlWindowInfo = { MAIN_CTRL_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	Types::ImGuiWindowInfo m_particleListWindowInfo = { PARTICLE_LIST_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	Types::ImGuiWindowInfo m_particleAddWindowInfo = { PARTICLE_ADD_WINDOW_MIN_SIZE, ImVec2(0, 0) };
-
-	inline static constexpr double PARTICLE_TIME_STEP_S = 0.0001; // seconds
-
-	inline static float WINDOWS_BG_ALPHA = 0.50f;
+	
+	inline static constexpr double DEFAULT_SIMULATION_TIME = 2.0;
+	inline static constexpr double DEFAULT_TIME_STEP = 0.0001;
+	inline static constexpr uint32_t STEPS_BUFFERED_AT_ONCE = 1000;
+	inline static constexpr uint32_t NUM_THREADS = 2;
+	inline static constexpr float WINDOWS_BG_ALPHA = 0.50f;
 	inline static constexpr ImVec2 MAIN_CTRL_WINDOW_MIN_SIZE = ImVec2(350, 200);
 	inline static constexpr ImVec2 PARTICLE_LIST_WINDOW_MIN_SIZE = ImVec2(600, 100);
 	inline static constexpr ImVec2 PARTICLE_ADD_WINDOW_MIN_SIZE = ImVec2(280, 200);
@@ -59,10 +93,10 @@ private:
 	inline static constexpr double SLIDER_MIN_POS = 0.0;
 	inline static constexpr double SLIDER_MAX_POS = 10.0;
 	inline static constexpr double DEFAULT_PARTICLE_MASS = 1.0;
-	inline static constexpr double DEFAULT_PARTICLE_CHARGE = 0.01;
+	inline static constexpr double DEFAULT_PARTICLE_CHARGE = 0.1;
 	inline static constexpr bool DEFAULT_PARTICLE_MOVABLE = true;
 	inline static constexpr Types::Vec3d DEFAULT_PARTICLE_POS = Types::Vec3d(0.0);
-	inline static const char* UNIT_PREFIXES[] = { "none", "n", "m", "k" }; \
+	inline static const char* UNIT_PREFIXES[] = { "none", "n", "m", "k" };
 
 	struct ParticleConfig
 	{

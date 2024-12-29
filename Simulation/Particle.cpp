@@ -8,7 +8,9 @@ Particle::Particle() :
 	m_velocity(Types::Vec3d(0.0)),
 	m_pos(Types::Vec3d(0.0)),
 	m_movable(true),
-	m_id(nextId++)
+	m_id(nextId++),
+	m_statesMutex(std::make_unique<std::mutex>()),
+	m_maxStep(std::make_unique<std::atomic<uint32_t>>(false))
 {
 	uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<glm::vec3>(m_pos)));
 	uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<glm::vec3>(m_pos), static_cast<glm::vec3>(m_affectingForce), glm::vec3(0.0f)));
@@ -28,7 +30,9 @@ Particle::Particle(
 	m_velocity(Types::Vec3d(0.0)),
 	m_pos(pos),
 	m_movable(movable),
-	m_id(nextId++)
+	m_id(nextId++),
+	m_statesMutex(std::make_unique<std::mutex>()),
+	m_maxStep(std::make_unique<std::atomic<uint32_t>>(false))
 {
 	uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<glm::vec3>(m_pos)));
 	uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<glm::vec3>(m_pos), static_cast<glm::vec3>(m_affectingForce), glm::vec3(0.0f)));
@@ -49,7 +53,9 @@ Particle::Particle(
 	m_velocity(Types::Vec3d(0.0)),
 	m_pos(pos),
 	m_movable(movable),
-	m_id(nextId++)
+	m_id(nextId++),
+	m_statesMutex(std::make_unique<std::mutex>()),
+	m_maxStep(std::make_unique<std::atomic<uint32_t>>(false))
 {
 	uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<glm::vec3>(m_pos)));
 	uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<glm::vec3>(m_pos), static_cast<glm::vec3>(m_affectingForce), glm::vec3(0.0f)));
@@ -97,46 +103,80 @@ void Particle::update(double time)
 	);
 }
 
-void Particle::pushState()
+void Particle::pushState(uint32_t idx)
 {
-	m_states.emplace_back(State{
+	m_states.emplace(idx, State{
 		m_affectingForce,
 		m_acceleration,
 		m_velocity,
 		m_pos
 	});
+	*m_maxStep = idx;
+}
+
+void Particle::pushState(uint32_t& idx, Types::Vec3d& force, Types::Vec3d& acceleration, Types::Vec3d& velocity, Types::Vec3d& pos)
+{
+	m_states.emplace(idx, State{
+		force,
+		acceleration,
+		velocity,
+		pos
+	});
+	*m_maxStep = idx;
 }
 
 void Particle::setInitialState()
 {
-	m_initialState = State{
+	m_initialState = std::make_unique<State>(
 		m_affectingForce,
 		m_acceleration,
 		m_velocity,
 		m_pos
-	};
+	);
 }
 
-void Particle::updateFromPrecalcPos(uint32_t idx)
+bool Particle::updateFromPrecalcPos(uint32_t idx)
 {
-	if (idx < m_states.size())
+	if (idx == 0)
+	{
+		if (not m_initialState)
+		{
+			throw std::runtime_error("No initial state set for particle");
+		}
+		m_affectingForce = m_initialState->affectingForce;
+		m_acceleration = m_initialState->acceleration;
+		m_velocity = m_initialState->velocity;
+		m_pos = m_initialState->pos;
+
+		m_models[P_MODEL_NAME]->update(static_cast<glm::vec3>(m_pos));
+		m_models[F_VECTOR_MODEL_NAME]->update(
+			static_cast<glm::vec3>(m_pos),
+			static_cast<glm::vec3>(m_affectingForce),
+			glm::normalize(static_cast<glm::vec3>(m_affectingForce)) * 2.5f
+		);
+		return true;
+	}
+	if (m_states.contains(idx))
 	{
 		m_affectingForce = m_states[idx].affectingForce;
 		m_acceleration = m_states[idx].acceleration;
 		m_velocity = m_states[idx].velocity;
 		m_pos = m_states[idx].pos;
 
-		m_models[P_MODEL_NAME]->update(static_cast<glm::vec3>(m_states[idx].pos));
+		m_models[P_MODEL_NAME]->update(static_cast<glm::vec3>(m_pos));
 		m_models[F_VECTOR_MODEL_NAME]->update(
-			static_cast<glm::vec3>(m_states[idx].pos), 
-			static_cast<glm::vec3>(m_states[idx].affectingForce),
-			glm::normalize(static_cast<glm::vec3>(m_states[idx].affectingForce)) * 2.5f
+			static_cast<glm::vec3>(m_pos),
+			static_cast<glm::vec3>(m_affectingForce),
+			glm::normalize(static_cast<glm::vec3>(m_affectingForce)) * 2.5f
 		);
+		return true;
 	}
+	return false;
 }
 
 void Particle::cleanup()
 {
 	Node::cleanup();
 	m_states.clear();
+	m_maxStep = 0;
 }
