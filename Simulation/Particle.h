@@ -4,6 +4,9 @@
 
 #include <optional>
 #include <cmath>
+#include <memory>
+#include <thread>
+#include <mutex>
 
 #include "RendererStructs.h"
 #include "Models.h"
@@ -26,13 +29,19 @@ public:
 	Particle(double charge, double mass, bool movable, Types::Vec3d pos);
 	Particle(double charge, double mass, bool movable, Types::Vec3d affectingForce, Types::Vec3d pos);
 
+	Particle(const Particle&) = delete;
+	Particle& operator=(const Particle&) = delete;
+	Particle(Particle&&) noexcept = default;
+	Particle& operator=(Particle&&) noexcept = default;
+
 	void update();
 	void update(Types::Vec3d affectingForce, double time);
 	void update(double time);
-	void pushState();
+	void pushState(uint32_t idx);
+	void pushState(uint32_t& idx, Types::Vec3d& force, Types::Vec3d& acceleration, Types::Vec3d& velocity, Types::Vec3d& pos);
 	void setInitialState();
 	inline void clearStates() { m_states.clear(); }
-	void updateFromPrecalcPos(uint32_t idx);
+	bool updateFromPrecalcPos(uint32_t idx);
 	void cleanup() override;
 
 	inline Types::Vec3d getCoulombForce(Particle& other) const
@@ -42,7 +51,28 @@ public:
 		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized(Constants::SOFTENING_CONSTANT) / distanceV.length2(Constants::SOFTENING_CONSTANT * 1e7);
 	}
 
-	State&				getInitialState() { return m_initialState; }
+	inline Types::Vec3d getCoulombForce(uint32_t stateIdx, Particle& other)
+	{
+		// F = k * |q1 * q2| / r^2
+		Types::Vec3d distanceV = m_states[stateIdx].pos - other.statesData()[stateIdx].pos;
+		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized(Constants::SOFTENING_CONSTANT) / distanceV.length2(Constants::SOFTENING_CONSTANT * 1e7);
+	}
+
+	std::mutex& mutexData()
+	{
+		return *m_statesMutex; 
+	}
+
+	std::map<uint32_t, State>& statesData()
+	{
+		return m_states;
+	}
+
+	uint32_t			getBufferedStepCount() const { return static_cast<uint32_t>(m_states.size()); }	
+	void				setMaxStep(uint32_t maxStep) { *m_maxStep = maxStep; }
+	const uint32_t&     getMaxStep() const { return *m_maxStep; }
+	State*				initialStateData() { return m_initialState.get(); }
+	State&				getInitialState() { return *m_initialState; }
 	double&				chargeData() { return m_charge; }
 	double&				massData() { return m_mass; }
 	Types::Vec3d&		affectingForceData() { return m_affectingForce; }
@@ -86,8 +116,12 @@ private:
 	Types::Vec3d m_pos;
 	bool m_movable;
 
-	State m_initialState;
-	std::vector<State> m_states;
+	std::unique_ptr<State> m_initialState;
+	std::map<uint32_t, State> m_states;
+
+	std::unique_ptr<std::mutex> m_statesMutex;
+
+	std::unique_ptr<std::atomic<uint32_t>> m_maxStep = 0;
 
 	uint64_t m_id = 0;
 	inline static uint64_t nextId = 0;
