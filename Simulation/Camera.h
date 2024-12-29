@@ -22,6 +22,10 @@ public:
 
     glm::mat4 getViewMatrix()
     {
+        if (m_lookingAtOrigin)
+        {
+			return glm::lookAt(m_position, glm::vec3(0.0f, 0.0f, 0.0f), -Constants::WORLD_UP);
+        }
         glm::mat4 cameraTranslation = glm::translate(glm::mat4(1.f), m_position);
         glm::mat4 cameraRotation = getRotationMatrix();
         return glm::inverse(cameraTranslation * cameraRotation);
@@ -63,6 +67,7 @@ public:
             { m_velocity.x = 0.0f; }
 
         if (Input::isJustPressed(GLFW_KEY_C)) { m_locked = !m_locked; }
+        if (Input::isJustPressed(GLFW_KEY_F)) { m_lookingAtOrigin = !m_lookingAtOrigin; }
     }
 
     void processMouseInput()
@@ -84,17 +89,27 @@ public:
         m_yaw += static_cast<float>(xoffset);
         m_pitch += static_cast<float>(yoffset);
 
+		if (m_lookingAtOrigin)
+		{
+			m_position = glm::rotate(glm::mat4(1.0f), static_cast<float>(xoffset), glm::vec3(0.0f, 1.0f, 0.0f)) * glm::vec4(m_position, 1.0f);
+            glm::vec3 axis = glm::normalize(glm::cross(m_position, glm::vec3(0.0f, 1.0f, 0.0f)));
+			if (m_pitch > glm::radians(-ORIGIN_CAMERA_PITCH_LIMIT) && m_pitch < glm::radians(ORIGIN_CAMERA_PITCH_LIMIT))
+			{
+                m_position = glm::rotate(glm::mat4(1.0f), static_cast<float>(yoffset), axis) * glm::vec4(m_position, 1.0f);
+			}
+            m_pitch = std::clamp(m_pitch, glm::radians(-ORIGIN_CAMERA_PITCH_LIMIT), glm::radians(ORIGIN_CAMERA_PITCH_LIMIT));
+            return;
+		}
+
 		m_pitch = std::clamp(m_pitch, glm::radians(-89.0f), glm::radians(89.0f));
-        //std::cout << "x: " << xpos << "y: " << ypos << '\n';
-		//std::cout << "pitch: " << m_pitch << " yaw: " << m_yaw << std::endl;
     }
 
-    void update()
+    void update(float delaTime)
     {
 		processKeyboardInput();
 		processMouseInput();
         glm::mat4 cameraRotation = getRotationMatrix();
-        m_position += glm::vec3(cameraRotation * glm::vec4(m_velocity * 0.5f, 0.f));
+        m_position += glm::vec3(cameraRotation * glm::vec4(m_velocity * delaTime, 0.f));
     }
 
     void calculatePitchYaw() 
@@ -106,13 +121,16 @@ public:
 
 private:
     bool m_locked = true;
+    bool m_lookingAtOrigin = true;
     glm::vec3 m_velocity = glm::vec3(0.0f, 0.0f, 0.0f);;
     glm::vec3 m_position;
     glm::vec3 m_target = glm::vec3(0.0f, 0.0f, 0.0f);
     float m_pitch{ 0.f };
     float m_yaw{ 0.f };
-	const float m_maxVelocity{ 0.05f };
+	const float m_maxVelocity{ 10.0f };
 	double m_lastX{ 0.0 };
 	double m_lastY{ 0.0 };
     float m_sensitivity = 0.01f;
+
+    float ORIGIN_CAMERA_PITCH_LIMIT = 45.0f;
 };
