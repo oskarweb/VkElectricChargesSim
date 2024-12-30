@@ -24,6 +24,8 @@ add_executable (Simulation
     "Node.cpp"
     "Node.h"
     "Renderer.h"
+    "Trail.cpp" 
+    "Trail.h"
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

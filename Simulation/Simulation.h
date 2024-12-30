@@ -32,7 +32,7 @@ public:
 	void run();
 
 private:
-	void updatePostions();
+	bool updatePostions();
 	void updatePositionsThreaded();
 	void calculateAllParticlePositions();
 	void calculateParticlePositions();
@@ -48,7 +48,8 @@ private:
 	void restartSimulation();
 	void resetAll();
 	void initWindow();
-	uint32_t getMaxStepsBuffered() { return 1'000'000'000u / static_cast<uint32_t>(sizeof(Particle::State)) / static_cast<uint32_t>(m_particles.size()); }
+	uint32_t getMaxStepsBuffered() { return 1'000'000'000u / static_cast<uint32_t>(sizeof(Particle::State)) / (static_cast<uint32_t>(m_particles.size()) + 1); }
+	uint32_t getStepsPer20ms() { return static_cast<uint32_t>(0.02 / m_timeStep); }
 	static inline std::string particleHeaderText(const Particle& particle);
 	static inline void displayUnitSelector(const std::string& unit, int& prefixIdx);
 

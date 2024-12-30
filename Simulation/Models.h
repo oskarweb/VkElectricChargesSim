@@ -115,7 +115,7 @@ struct ParticleModel : Model
 	}
 };
 
-struct MutableTrailModel : Model
+struct LineModel : Model
 {
 	using Model::renderables;
 
@@ -124,15 +124,21 @@ struct MutableTrailModel : Model
 		(*renderables["trail"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
 	}
 
-	MutableTrailModel(glm::vec3 _pos) : Model(_pos)
+	LineModel(glm::vec3 from, glm::vec3 to) : Model(from)
 	{
+		glm::vec3 dir = to - from;
+		float length = glm::length(dir);
+		glm::vec3 normDir = glm::normalize(dir);
+		glm::quat rotation = glm::rotation(glm::vec3(1.0f, 0.0f, 0.0f), normDir);
+		glm::mat4 translation = glm::translate(glm::mat4(1.0f), from);
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(length, 1.0f, 1.0f));
 		renderableInfos = std::vector<RenderableInfo>
 		{
 			RenderableInfo{
 				"trail",
 				"line",
 				"line",
-				glm::translate(glm::mat4(1.0f), pos)
+				translation * glm::toMat4(rotation) * scale
 			}
 		};
 	}
