@@ -7,7 +7,7 @@ class Node
 {
 public:
 	Node(const Node&) = delete;
-	//Node& operator=(const Node&) = delete;
+	Node& operator=(const Node&) = delete;
 	Node(Node&&) noexcept = default;
 	Node& operator=(Node&&) noexcept = default;
 	Node() = default;

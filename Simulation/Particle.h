@@ -12,6 +12,7 @@
 #include "Models.h"
 #include "Node.h"
 #include "extras.h"
+#include "Trail.h"
 
 class Particle : public Node
 {
@@ -43,6 +44,7 @@ public:
 	inline void clearStates() { m_states.clear(); }
 	bool updateFromPrecalcPos(uint32_t idx);
 	void cleanup() override;
+	void resetTrail() { m_trail.cleanup(); }
 
 	inline Types::Vec3d getCoulombForce(Particle& other) const
 	{
@@ -115,6 +117,8 @@ private:
 	Types::Vec3d m_velocity;
 	Types::Vec3d m_pos;
 	bool m_movable;
+
+	Trail m_trail;
 
 	std::unique_ptr<State> m_initialState;
 	std::map<uint32_t, State> m_states;

@@ -83,8 +83,9 @@ void Simulation::calculatePositionsForSingleParticle(Particle* particle)
 
 void Simulation::calculateParticlePositions()
 {
-	uint32_t m_mutualMaxStep = std::min(m_maxUsedStep + 1001, static_cast<uint32_t>(m_simulationTime / m_timeStep) + 1);
-	for (uint32_t i = m_maxUsedStep + 1; i < m_mutualMaxStep; ++i)
+	uint32_t startingStep = m_mutualMaxStep + 1;
+	m_mutualMaxStep = std::min(m_mutualMaxStep + getStepsPer20ms(), static_cast<uint32_t>(m_simulationTime / m_timeStep));
+	for (uint32_t i = startingStep; i < m_mutualMaxStep + 1; ++i)
 	{
 		for (auto& particle : m_particles)
 		{
@@ -166,7 +167,6 @@ void Simulation::run()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-
 		ImGui::ShowDemoWindow();
 
 		if (m_threadedCalculation)
@@ -179,23 +179,35 @@ void Simulation::run()
 			m_mutualStepCv.notify_all();
 		}
 
-		if (not m_precalculateAll && not m_threadedCalculation && m_simulateFromPrecalculatedSteps && not m_paused)
+		if (not m_precalculateAll && not m_threadedCalculation && m_simulateFromPrecalculatedSteps) // Precalculated 100ms ahead
 		{
+			static uint32_t skipCounter = 0;
+			static double lastCalcTime = 0;
 			m_maxUsedStep = m_elapsedTime / m_timeStep;
-			calculateParticlePositions();
-			updatePostions();
-			m_elapsedTime = std::clamp(m_elapsedTime + m_rendererHandle.getDeltaTime(), 0.0, m_simulationTime);
-			if (m_elapsedTime == m_simulationTime)
+
+			if (not m_paused && skipCounter == 0)
 			{
-				m_paused = true;
-			}
-			for (auto& particle : m_particles)
-			{
-				std::erase_if(particle.statesData(), [this](const auto& item)
+				if (m_maxUsedStep <= m_mutualMaxStep)
 				{
-						auto const& [key, value] = item;
-						return key < m_maxUsedStep;
-				});
+					updatePostions();
+					m_elapsedTime = std::clamp(m_elapsedTime + std::min(m_rendererHandle.getDeltaTime(), 0.02), 0.0, m_simulationTime);
+					for (auto& particle : m_particles)
+					{
+						std::erase_if(particle.statesData(), [this](const auto& item)
+						{
+								auto const& [key, value] = item;
+								return key < m_maxUsedStep;
+						});
+					}
+				}
+				auto start = std::chrono::high_resolution_clock::now();
+				calculateParticlePositions();
+				lastCalcTime = std::chrono::duration<double, std::chrono::seconds::period>(start - std::chrono::high_resolution_clock::now()).count();
+				//skipCounter = 2;
+			}
+			else if (not m_paused && skipCounter > 0)
+			{ 
+				skipCounter--;
 			}
 		}
 
@@ -245,6 +257,11 @@ void Simulation::run()
 			{
 				m_elapsedTime += m_rendererHandle.getDeltaTime();
 			}
+		}
+
+		if (m_elapsedTime == m_simulationTime)
+		{
+			m_paused = true;
 		}
 
 		displayMainCtrlWindow();
@@ -305,7 +322,7 @@ void Simulation::updatePositionsThreaded()
 	}
 }
 
-void Simulation::updatePostions()
+bool Simulation::updatePostions()
 {
 	for (auto it = m_particles.begin(); it != m_particles.end(); it++)
 	{
@@ -315,6 +332,7 @@ void Simulation::updatePostions()
 		}
 		bool updateSuccess = (*it).updateFromPrecalcPos(static_cast<uint32_t>(m_maxUsedStep));
 	}
+	return true;
 }
 
 void Simulation::displayMainCtrlWindow()
@@ -354,10 +372,19 @@ void Simulation::displayMainCtrlWindow()
 
 	if (ImGui::Button("Start") && m_paused)
 	{
-		m_simulationTime = simulationTime;
 		m_timeStep = timeStep;
-		m_skipUpdate = true;
-		startSimulation();
+		if (getStepsPer20ms() <= getMaxStepsBuffered())
+		{
+			m_simulationTime = simulationTime;
+			m_skipUpdate = true;
+			startSimulation();
+		}
+	}
+
+	if (getStepsPer20ms() > getMaxStepsBuffered())
+	{
+		ImGui::SameLine();
+		ImGui::Text("Reduce Time Step or amount of particles");
 	}
 
 	if (ImGui::Button("Pause") && not m_paused)
@@ -384,6 +411,10 @@ void Simulation::displayMainCtrlWindow()
 	{
 		resetAll();
 	}
+
+	ImGui::Text("Steps per 100ms: %d", getStepsPer20ms());
+
+	ImGui::Text("Max buffered: %d", getMaxStepsBuffered());
 
 	ImGui::End();
 }
@@ -655,6 +686,7 @@ void Simulation::restartSimulation()
 
 	for (auto& particle : m_particles)
 	{
+		particle.resetTrail();
 		particle.statesData().clear();
 		particle.setMaxStep(0);
 		particle.setAffectingForce(particle.getInitialState().affectingForce);
