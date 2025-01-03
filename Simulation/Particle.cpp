@@ -136,6 +136,7 @@ void Particle::setInitialState()
 		m_velocity,
 		m_pos
 	);
+	m_trail.setInitialPos(static_cast<glm::vec3>(m_pos));
 }
 
 bool Particle::updateFromPrecalcPos(uint32_t idx)
@@ -149,9 +150,7 @@ bool Particle::updateFromPrecalcPos(uint32_t idx)
 
 		if (idx > 0)
 		{
-			m_trail.addSection(
-				static_cast<glm::vec3>(m_pos)
-			);
+			m_trail.addSection(static_cast<glm::vec3>(m_pos));
 		}
 		m_models[P_MODEL_NAME]->update(static_cast<glm::vec3>(m_pos));
 		m_models[F_VECTOR_MODEL_NAME]->update(

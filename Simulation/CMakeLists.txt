@@ -26,6 +26,8 @@ add_executable (Simulation
     "Renderer.h"
     "Trail.cpp" 
     "Trail.h"
+    "ChargedCuboid.cpp"
+    "ChargedCuboid.h"
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
@@ -52,4 +54,15 @@ target_link_libraries(Simulation PRIVATE glfw Vulkan::Vulkan imgui::imgui glm::g
 target_include_directories(Simulation PRIVATE 
     "third_party/stb_image"
     "third_party/tiny_obj_loader"
+    "third_party/implot"
+)
+
+target_sources(Simulation PRIVATE 
+    "third_party/stb_image/stb_image.h"
+    "third_party/tiny_obj_loader/tiny_obj_loader.h"
+    "third_party/implot/implot.cpp"
+    "third_party/implot/implot_items.cpp"
+    "third_party/implot/implot_internal.h"
+    "third_party/implot/implot_demo.cpp"
+    "third_party/implot/implot.h"
 )
