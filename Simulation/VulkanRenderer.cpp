@@ -235,6 +235,7 @@ void VulkanRenderer::initImgui()
     }
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGui_ImplGlfw_InitForVulkan(m_window, true);
     ImGui_ImplVulkan_InitInfo initInfo = {};
     initInfo.Instance = m_instance;
@@ -949,7 +950,7 @@ void VulkanRenderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     renderPassInfo.renderArea.extent = m_swapChainExtent;
    
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[0].color = { {0.04f, 0.04f, 0.04f, 1.0f} };
     clearValues[1].depthStencil = { 1.0f, 0 };
 
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());

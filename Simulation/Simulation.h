@@ -10,6 +10,7 @@
 #include "Input.h"
 #include "Models.h"
 #include "Particle.h"
+#include "ChargedCuboid.h"
 
 class Simulation
 {
@@ -23,25 +24,39 @@ public:
 
 	~Simulation()
 	{
-		for (auto& thread : m_threads)
+		if (m_threadedCalculation)
 		{
-			thread.join();
+			for (auto& thread : m_threads)
+			{
+				if (thread.joinable())
+					thread.join();
+			}
 		}
 	}
 
 	void run();
 
+	enum class SimulationMode
+	{
+		STATIC = 0,
+		PRECALCULATEDALL,
+		PRECALCULATED20MS,
+		REALTIME,
+	};
+
 private:
-	bool updatePostions();
+	void updateStatic();
+	void updateAllPrecalc();
+	void update20MsPecalc();
+	void updateRealTime();
+
+	bool updatePositions();
 	void updatePositionsThreaded();
 	void calculateAllParticlePositions();
 	void calculateParticlePositions();
 	void launchParticleThreads();
 	void calculateParticlePostionsThreaded(std::stop_token stopToken, uint32_t minIdx, uint32_t maxIdx);
 	void calculatePositionsForSingleParticle(Particle* particle);
-	void displayMainCtrlWindow();
-	void displayParticleListWindow();
-	void displayParticleAddWindow();
 	void addParticle(Particle&& particle);
 	void removeParticle(std::vector<Particle>::iterator& it);
 	void startSimulation();
@@ -50,37 +65,55 @@ private:
 	void initWindow();
 	uint32_t getMaxStepsBuffered() { return 1'000'000'000u / static_cast<uint32_t>(sizeof(Particle::State)) / (static_cast<uint32_t>(m_particles.size()) + 1); }
 	uint32_t getStepsPer20ms() { return static_cast<uint32_t>(0.02 / m_timeStep); }
+
+	// GUI
+	void displayMainCtrlWindow();
+	void displayParticleListWindow();
+	void displayParticleAddWindow();
+	void displayPlotWindow();
 	static inline std::string particleHeaderText(const Particle& particle);
 	static inline void displayUnitSelector(const std::string& unit, int& prefixIdx);
 
-	std::vector<Particle> m_particles;
-
+	//
+	// VARIABLES
+	//
+	
 	GLFWwindow* m_window = nullptr;
 	VulkanRenderer& m_rendererHandle;
 	Camera m_camera;
 
+	SimulationMode m_mode = SimulationMode::STATIC;
+
+	std::vector<Particle> m_particles;
+	std::vector<ChargedCuboid> m_cuboids; // Possibly implement charged volume abstract class
+
 	bool m_skipUpdate = true;
-	bool m_simulateFromPrecalculatedSteps = true;
-	bool m_precalculateAll = false;
-	bool m_threadedCalculation = false;
 	std::atomic<bool> m_paused = true;
-	double m_startTime = 0.0;
 	std::atomic<double> m_elapsedTime = 0.0;
+	double m_startTime = 0.0;
 	double m_simulationTime = DEFAULT_SIMULATION_TIME;
 	double m_timeStep = DEFAULT_TIME_STEP;
-	
+
+	std::atomic<uint32_t> m_mutualMaxStep = 0;
+	std::atomic<uint32_t> m_maxUsedStep = 0;
+
+	// MULTITHREADING 
+	bool m_threadedCalculation = false;
+	std::vector<std::jthread> m_threads;
+	std::condition_variable m_mutualStepCv;
+
 	bool m_isHung = false;
 	std::vector<Particle>::iterator m_hungIt;
 
-	std::vector<std::jthread> m_threads;
-	std::atomic<uint32_t> m_mutualMaxStep = 0;
-	std::atomic<uint32_t> m_maxUsedStep = 0;
-	std::condition_variable m_mutualStepCv;
+	// GUI
+	std::vector<Particle>::iterator m_plotSelectedParticle;
 
 	Types::ImGuiWindowInfo m_mainCtrlWindowInfo = { MAIN_CTRL_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	Types::ImGuiWindowInfo m_particleListWindowInfo = { PARTICLE_LIST_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	Types::ImGuiWindowInfo m_particleAddWindowInfo = { PARTICLE_ADD_WINDOW_MIN_SIZE, ImVec2(0, 0) };
+	Types::ImGuiWindowInfo m_plotWindowInfo = { PLOT_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	
+	// CONSTANTS
 	inline static constexpr double DEFAULT_SIMULATION_TIME = 2.0;
 	inline static constexpr double DEFAULT_TIME_STEP = 0.0001;
 	inline static constexpr uint32_t STEPS_BUFFERED_AT_ONCE = 1000;
@@ -89,6 +122,7 @@ private:
 	inline static constexpr ImVec2 MAIN_CTRL_WINDOW_MIN_SIZE = ImVec2(350, 200);
 	inline static constexpr ImVec2 PARTICLE_LIST_WINDOW_MIN_SIZE = ImVec2(600, 100);
 	inline static constexpr ImVec2 PARTICLE_ADD_WINDOW_MIN_SIZE = ImVec2(280, 200);
+	inline static constexpr ImVec2 PLOT_WINDOW_MIN_SIZE = ImVec2(400, 400);
 	inline static constexpr double SLIDER_MIN_AFFECTING_FORCE = -2.0;
 	inline static constexpr double SLIDER_MAX_AFFECTING_FORCE = 2.0;
 	inline static constexpr double SLIDER_MIN_POS = 0.0;
@@ -98,7 +132,8 @@ private:
 	inline static constexpr bool DEFAULT_PARTICLE_MOVABLE = true;
 	inline static constexpr Types::Vec3d DEFAULT_PARTICLE_POS = Types::Vec3d(0.0);
 	inline static const char* UNIT_PREFIXES[] = { "none", "n", "m", "k" };
-
+	
+	// PRESETS
 	struct ParticleConfig
 	{
 		double charge = DEFAULT_PARTICLE_CHARGE;

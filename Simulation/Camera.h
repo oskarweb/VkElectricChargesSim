@@ -39,18 +39,6 @@ public:
         return glm::toMat4(yawRotation) * glm::toMat4(pitchRotation);
     }
 
-
-	glm::vec3& velocity() { return m_velocity; }
-    glm::vec3& position() { return m_position; }
-    void setVelocityX(float&& velocityX) { m_velocity.x = velocityX; }
-    void setVelocityY(float&& velocityY) { m_velocity.y = velocityY; }
-    void setVelocityZ(float&& velocityZ) { m_velocity.z = velocityZ; }
-    void setPitch(float pitch) { m_pitch = pitch; }
-    void setYaw(float yaw) { m_yaw = yaw; }
-	bool locked() const { return m_locked; }
-	void lock(bool locked) { m_locked = locked; }
-	const float& getMaxVelocity() const { return m_maxVelocity; }
-
     void processKeyboardInput()
     {
         if (Input::isPressed(GLFW_KEY_W) && !Input::isPressed(GLFW_KEY_S)) 
@@ -72,16 +60,16 @@ public:
 
     void processMouseInput()
     {
-        
+        double xoffset = Input::getMousePos().x - m_lastX;
+        double yoffset = m_lastY - Input::getMousePos().y;
+
+        m_lastX = Input::getMousePos().x;
+        m_lastY = Input::getMousePos().y;
+
 		if (m_locked)
 		{
 			return;
 		}
-        
-        double xoffset = Input::getMousePos().x - m_lastX;
-        double yoffset = m_lastY - Input::getMousePos().y;
-        m_lastX = Input::getMousePos().x;
-        m_lastY = Input::getMousePos().y;
 
         xoffset *= m_sensitivity;
         yoffset *= m_sensitivity;
@@ -119,6 +107,17 @@ public:
         m_pitch = asin(direction.z);
     }
 
+    glm::vec3& velocity() { return m_velocity; }
+    glm::vec3& position() { return m_position; }
+    void setVelocityX(float&& velocityX) { m_velocity.x = velocityX; }
+    void setVelocityY(float&& velocityY) { m_velocity.y = velocityY; }
+    void setVelocityZ(float&& velocityZ) { m_velocity.z = velocityZ; }
+    void setPitch(float pitch) { m_pitch = pitch; }
+    void setYaw(float yaw) { m_yaw = yaw; }
+    bool locked() const { return m_locked; }
+    void lock(bool locked) { m_locked = locked; }
+    const float& getMaxVelocity() const { return m_maxVelocity; }
+
 private:
     bool m_locked = true;
     bool m_lookingAtOrigin = true;
@@ -127,7 +126,7 @@ private:
     glm::vec3 m_target = glm::vec3(0.0f, 0.0f, 0.0f);
     float m_pitch{ 0.f };
     float m_yaw{ 0.f };
-	const float m_maxVelocity{ 10.0f };
+	const float m_maxVelocity{ 20.0f };
 	double m_lastX{ 0.0 };
 	double m_lastY{ 0.0 };
     float m_sensitivity = 0.01f;

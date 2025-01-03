@@ -77,16 +77,8 @@ struct VectorArrowModel : Model
 				"head",
 				"pyramid",
 				"cube",
-				glm::translate(glm::mat4(1.0f), pos) // * glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.3f, 0.3f, 0.3f))
+				glm::translate(glm::mat4(1.0f), pos)
 			}
-			/*
-			RenderableInfo{
-				"shaft",
-				"line",
-				"line",
-				glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, -9.0f, 0.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)) //* glm::scale(glm::mat4(1.0f), glm::vec3(0.3f, 0.0f, 0.3f))
-			}
-			*/
 		};
 	}
 };
@@ -183,4 +175,29 @@ struct AxesModel : Model
 			}
 		};
 	}
+};
+
+struct CuboidModel : Model
+{
+	using Model::renderables;
+
+	void update(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 faceDirection = glm::vec3(0.0f), glm::vec3 offset = glm::vec3(0.0f)) override
+	{
+		(*renderables["cuboid"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+	}
+
+	CuboidModel(glm::vec3 _pos, glm::vec3 _shape) : Model(_pos), shape(_shape)
+	{
+		renderableInfos = std::vector<RenderableInfo>
+		{
+			RenderableInfo{
+				"cuboid",
+				"cube",
+				"cube",
+				glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(shape))
+			}
+		};
+	}
+
+	glm::vec3 shape;
 };
