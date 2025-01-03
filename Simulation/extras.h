@@ -74,7 +74,7 @@ namespace Constants
 	constexpr uint32_t WIDTH = 1280;
 	constexpr uint32_t HEIGHT = 720;
     constexpr uint32_t TEXTURE_COUNT = 1;
-    constexpr float AXES_LENGTH = 100.0f;
+    constexpr float AXES_LENGTH = 2000.0f;
     constexpr float EPSILON = 0.0000000000000000000000001f;
 	constexpr glm::vec3 WORLD_UP = glm::vec3(0.0f, -1.0f, 0.0f);
 
