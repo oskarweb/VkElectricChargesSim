@@ -27,14 +27,8 @@ namespace Types
         constexpr Vec3d(double x, double y, double z) : x(x), y(y), z(z) {}
         constexpr Vec3d(double n) : x(n), y(n), z(n) {}
     
-        inline constexpr double length2(double softening = 0.0) const { return (x * x + y * y + z * z) + softening; }
-        inline double length(double softening = 0.0) const {
-            return std::sqrt(
-                    std::sqrt(x * x + softening * softening) +
-                    std::sqrt(y * y + softening * softening) +
-                    std::sqrt(z * z + softening * softening)
-            );
-        }
+        inline constexpr double length2(double softening = 0.0) const { return (x * x + y * y + z * z) + softening * softening; }
+        inline double length(double softening = 0.0) const { return std::sqrt((x * x + y * y + z * z) + softening * softening); }
         inline Vec3d normalized(double softening = 0.0) const { return (softening + *this) / this->length(softening); }
     
         inline constexpr Vec3d operator+(const Vec3d& other) const   { return Vec3d{ x + other.x, y + other.y, z + other.z }; }
@@ -45,6 +39,7 @@ namespace Types
         inline constexpr Vec3d& operator*=(double scalar)            { x *= scalar; y *= scalar; z *= scalar; return *this; }
         inline constexpr Vec3d operator/(double scalar) const        { return Vec3d{ x / scalar, y / scalar, z / scalar }; }
         inline constexpr Vec3d& operator/=(double scalar)            { x /= scalar; y /= scalar; z /= scalar; return *this; }
+		inline constexpr Vec3d operator*(const Vec3d& other) const   { return Vec3d{ x * other.x, y * other.y, z * other.z }; }
     
         explicit operator glm::vec3() const { return glm::vec3(x, y, z); }
     
@@ -65,11 +60,17 @@ namespace Types
 		ImVec2 size;
 		ImVec2 pos;
     };
+
+    enum class OdeMethod
+    {
+        RK4 = 1,
+        BackwardEuler,
+    };
 }
 
 namespace Constants
 {
-    constexpr double SOFTENING_CONSTANT = 0.0000001;
+    constexpr double SOFTENING_CONSTANT = 0.6;
     constexpr Types::Vec3d SOFTENING_VEC3 = Types::Vec3d(SOFTENING_CONSTANT);
 	constexpr uint32_t WIDTH = 1280;
 	constexpr uint32_t HEIGHT = 720;
@@ -77,6 +78,8 @@ namespace Constants
     constexpr float AXES_LENGTH = 2000.0f;
     constexpr float EPSILON = 0.0000000000000000000000001f;
 	constexpr glm::vec3 WORLD_UP = glm::vec3(0.0f, -1.0f, 0.0f);
+
+    inline static const char* methods[] = { "1. RK4", "2. BackwardEuler" };
 
 	const std::vector<const char*> validationLayers =
 	{

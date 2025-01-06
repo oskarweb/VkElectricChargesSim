@@ -128,6 +128,17 @@ void Particle::pushState(uint32_t& idx, Types::Vec3d& force, Types::Vec3d& accel
 	*m_maxStep = idx;
 }
 
+void Particle::pushState(uint32_t& idx, Types::Vec3d&& force, Types::Vec3d&& acceleration, Types::Vec3d&& velocity, Types::Vec3d&& pos)
+{
+	m_states.emplace(idx, State{
+		force,
+		acceleration,
+		velocity,
+		pos
+		});
+	*m_maxStep = idx;
+}
+
 void Particle::setInitialState()
 {
 	m_initialState = std::make_unique<State>(
@@ -150,7 +161,15 @@ bool Particle::updateFromPrecalcPos(uint32_t idx)
 
 		if (idx > 0)
 		{
-			m_trail.addSection(static_cast<glm::vec3>(m_pos));
+			switch (m_method)
+			{
+			case Types::OdeMethod::RK4:
+				m_trail.addSectionRed(static_cast<glm::vec3>(m_pos));
+				break;
+			case Types::OdeMethod::BackwardEuler:
+				m_trail.addSectionYellow(static_cast<glm::vec3>(m_pos));
+				break;
+			}
 		}
 		m_models[P_MODEL_NAME]->update(static_cast<glm::vec3>(m_pos));
 		m_models[F_VECTOR_MODEL_NAME]->update(

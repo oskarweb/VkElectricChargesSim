@@ -158,9 +158,14 @@ inline constexpr std::array<Vertex, 18> pyramidVertices = {
     Vertex{{ 0.5f, 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 2> lineVertices = {
+inline constexpr std::array<Vertex, 2> redLineVertices = {
     Vertex{{ 0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     Vertex{{ 1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+};
+
+inline constexpr std::array<Vertex, 2> yellowLineVertices = {
+    Vertex{{ 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
 inline constexpr std::array<Vertex, 2> xAxisVertices = {

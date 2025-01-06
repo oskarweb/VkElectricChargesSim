@@ -38,10 +38,16 @@ public:
 
 	enum class SimulationMode
 	{
-		STATIC = 0,
-		PRECALCULATEDALL,
-		PRECALCULATED20MS,
-		REALTIME,
+		Static = 0,
+		PrecalculatedAll,
+		Precalculated20Ms,
+		Realtime,
+	};
+
+	enum class TrailColors
+	{
+		Red,
+		Yellow
 	};
 
 private:
@@ -50,10 +56,15 @@ private:
 	void update20MsPecalc();
 	void updateRealTime();
 
+	Types::Vec3d calcForce(uint32_t stateId, Particle& particle, Types::Vec3d distanceMod = 0.0);
+
+	void calculateSteps(uint32_t startingStep);
+	void rk4Step(uint32_t startingStep, Particle& particle);
+	void backwardEulerStep(uint32_t stepIdx, Particle& particle);
+	
 	bool updatePositions();
 	void updatePositionsThreaded();
-	void calculateAllParticlePositions();
-	void calculateParticlePositions();
+	void calculateParticlePositions(bool all = false);
 	void launchParticleThreads();
 	void calculateParticlePostionsThreaded(std::stop_token stopToken, uint32_t minIdx, uint32_t maxIdx);
 	void calculatePositionsForSingleParticle(Particle* particle);
@@ -82,7 +93,8 @@ private:
 	VulkanRenderer& m_rendererHandle;
 	Camera m_camera;
 
-	SimulationMode m_mode = SimulationMode::STATIC;
+	SimulationMode m_mode = SimulationMode::Static;
+	Types::OdeMethod m_method = Types::OdeMethod::RK4;
 
 	std::vector<Particle> m_particles;
 	std::vector<ChargedCuboid> m_cuboids; // Possibly implement charged volume abstract class
@@ -114,6 +126,8 @@ private:
 	Types::ImGuiWindowInfo m_plotWindowInfo = { PLOT_WINDOW_MIN_SIZE, ImVec2(0, 0) };
 	
 	// CONSTANTS
+	inline static constexpr int BACKWARD_EULER_ITERS = 20;
+	inline static constexpr double BACKWARD_EULER_TOLERANCE = 1.0e-3;
 	inline static constexpr double DEFAULT_SIMULATION_TIME = 2.0;
 	inline static constexpr double DEFAULT_TIME_STEP = 0.0001;
 	inline static constexpr uint32_t STEPS_BUFFERED_AT_ONCE = 1000;
@@ -132,7 +146,10 @@ private:
 	inline static constexpr bool DEFAULT_PARTICLE_MOVABLE = true;
 	inline static constexpr Types::Vec3d DEFAULT_PARTICLE_POS = Types::Vec3d(0.0);
 	inline static const char* UNIT_PREFIXES[] = { "none", "n", "m", "k" };
-	
+
+	inline static constexpr int RK4_MASK = 1 << 0;
+	inline static constexpr int BACKWARD_EULER_MASK = 1 << 1;
+
 	// PRESETS
 	struct ParticleConfig
 	{

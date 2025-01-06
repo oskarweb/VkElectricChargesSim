@@ -40,6 +40,7 @@ public:
 	void update(double time);
 	void pushState(uint32_t idx);
 	void pushState(uint32_t& idx, Types::Vec3d& force, Types::Vec3d& acceleration, Types::Vec3d& velocity, Types::Vec3d& pos);
+	void pushState(uint32_t& idx, Types::Vec3d&& force, Types::Vec3d&& acceleration, Types::Vec3d&& velocity, Types::Vec3d&& pos);
 	void setInitialState();
 	inline void clearStates() { m_states.clear(); }
 	bool updateFromPrecalcPos(uint32_t idx);
@@ -50,14 +51,25 @@ public:
 	{
 		// F = k * |q1 * q2| / r^2
 		Types::Vec3d distanceV = m_pos - other.getPos();
-		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized(Constants::SOFTENING_CONSTANT) / distanceV.length2(Constants::SOFTENING_CONSTANT * 1e7);
+		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized() / distanceV.length2(Constants::SOFTENING_CONSTANT);
+	}
+
+	inline Types::Vec3d getCoulombForce(uint32_t stateIdx, Particle& other, Types::Vec3d distMod)
+	{
+		Types::Vec3d distanceV = m_states[stateIdx].pos + distMod - other.statesData()[stateIdx].pos;
+		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized() / distanceV.length2(Constants::SOFTENING_CONSTANT);
 	}
 
 	inline Types::Vec3d getCoulombForce(uint32_t stateIdx, Particle& other)
 	{
-		// F = k * |q1 * q2| / r^2
 		Types::Vec3d distanceV = m_states[stateIdx].pos - other.statesData()[stateIdx].pos;
-		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized(Constants::SOFTENING_CONSTANT) / distanceV.length2(Constants::SOFTENING_CONSTANT * 1e7);
+		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized() / distanceV.length2(Constants::SOFTENING_CONSTANT);
+	}
+
+	inline Types::Vec3d getCoulombForcePosOverwrite(uint32_t stateIdx, Particle& other, Types::Vec3d posOverwrite)
+	{
+		Types::Vec3d distanceV = posOverwrite - other.statesData()[stateIdx].pos;
+		return COULOMB_CONSTANT * m_charge * other.getCharge() * distanceV.normalized() / distanceV.length2(Constants::SOFTENING_CONSTANT);
 	}
 
 	std::mutex& mutexData()
@@ -99,9 +111,12 @@ public:
 		m_movable = movable;
 		return m_movable;
 	}
+	bool& movableData() { return m_movable; }
 	const bool isMovable() const { return m_movable; }
 	const uint64_t& getId() const { return m_id; }
 	static void resetId() { nextId = 0; }
+	void setMethodMask(Types::OdeMethod method) { m_method = method; }
+	const Types::OdeMethod& getMethodMask() const { return m_method; }
 
 	inline static constexpr double ELECTRIC_CONSTANT = 8.854187817e-12; // [F / m]
 	inline static constexpr double COULOMB_CONSTANT = 8.9875517873681764e9; // 1 / (4 * pi * ELECTRIC_CONSTANT) [N * m^2 / C^2]
@@ -110,6 +125,7 @@ public:
 	inline static const std::string& P_MODEL_NAME = "particle";
 	inline static constexpr glm::vec3 F_VECTOR_OFFEST = glm::vec3(0.0f, 0.0f, 0.0f);
 private:
+	Types::OdeMethod m_method = Types::OdeMethod::RK4;
 	double m_charge;
 	double m_mass;
 	Types::Vec3d m_affectingForce;

@@ -174,9 +174,12 @@ void VulkanRenderer::init()
     m_meshes.emplace("zAxis", Mesh("zAxis", m_device));
     m_meshes["zAxis"].fromVertices(zAxisVertices.data(), zAxisVertices.size());
     m_meshes["zAxis"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
-	m_meshes.emplace("line", Mesh("line", m_device));
-    m_meshes["line"].fromVertices(lineVertices.data(), lineVertices.size());
-	m_meshes["line"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
+	m_meshes.emplace("redline", Mesh("redline", m_device));
+    m_meshes["redline"].fromVertices(redLineVertices.data(), redLineVertices.size());
+	m_meshes["redline"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
+    m_meshes.emplace("yellowline", Mesh("yellowline", m_device));
+    m_meshes["yellowline"].fromVertices(yellowLineVertices.data(), yellowLineVertices.size());
+    m_meshes["yellowline"].upload(m_physicalDevice, m_graphicsQueue, m_commandPool);
     //m_meshes.emplace("default", Mesh(m_device));
     //std::filesystem::path modelPath = Constants::MODELS_PATH / "viking_room.obj";
     //std::filesystem::path modelPath2 = Constants::MODELS_PATH / "bomba.obj";

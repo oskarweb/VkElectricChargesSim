@@ -1,14 +1,27 @@
 #include "Trail.h"
 
-void Trail::addSection(glm::vec3 from, glm::vec3 to)
+void Trail::addSectionRed(glm::vec3 from, glm::vec3 to)
 {
-	uploadModel(std::to_string(idx), std::make_unique<LineModel>(from, to));
+	uploadModel(std::to_string(idx), std::make_unique<RedLineModel>(from, to));
 	idx++;
 }
 
-void Trail::addSection(glm::vec3 to)
+void Trail::addSectionRed(glm::vec3 to)
 {
-	uploadModel(std::to_string(idx), std::make_unique<LineModel>(m_lastPos, to));
+	uploadModel(std::to_string(idx), std::make_unique<RedLineModel>(m_lastPos, to));
+	idx++;
+	m_lastPos = to;
+}
+
+void Trail::addSectionYellow(glm::vec3 from, glm::vec3 to)
+{
+	uploadModel(std::to_string(idx), std::make_unique<YellowLineModel>(from, to));
+	idx++;
+}
+
+void Trail::addSectionYellow(glm::vec3 to)
+{
+	uploadModel(std::to_string(idx), std::make_unique<YellowLineModel>(m_lastPos, to));
 	idx++;
 	m_lastPos = to;
 }
