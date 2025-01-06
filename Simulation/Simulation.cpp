@@ -79,16 +79,16 @@ void Simulation::run()
 			{
 				switch (m_mode)
 				{
-				case SimulationMode::STATIC:
+				case SimulationMode::Static:
 					updateStatic();
 					break;
-				case SimulationMode::PRECALCULATEDALL:
+				case SimulationMode::PrecalculatedAll:
 					updateAllPrecalc();
 					break;
-				case SimulationMode::PRECALCULATED20MS:
+				case SimulationMode::Precalculated20Ms:
 					update20MsPecalc();
 					break;
-				case SimulationMode::REALTIME:
+				case SimulationMode::Realtime:
 					updateRealTime();
 					break;
 				}
@@ -182,53 +182,97 @@ void Simulation::calculatePositionsForSingleParticle(Particle* particle)
 
 }
 
-void Simulation::calculateParticlePositions()
+void Simulation::calculateParticlePositions(bool all)
 {
-	uint32_t startingStep = m_mutualMaxStep + 1;
-	m_mutualMaxStep = std::min(m_mutualMaxStep + getStepsPer20ms(), static_cast<uint32_t>(m_simulationTime / m_timeStep));
+	uint32_t startingStep {0};
+	if (not all)
+	{
+		startingStep = m_mutualMaxStep + 1;
+		m_mutualMaxStep = std::min(m_mutualMaxStep + getStepsPer20ms(), static_cast<uint32_t>(m_simulationTime / m_timeStep));
+	}
+	else
+	{
+		startingStep = 1;
+		m_mutualMaxStep = static_cast<uint32_t>(m_simulationTime / m_timeStep);
+	}
+
+	calculateSteps(startingStep);
+}
+
+void Simulation::rk4Step(uint32_t stepIdx, Particle& particle)
+{
+	Types::Vec3d k1r = m_timeStep * particle.statesData()[stepIdx - 1].velocity;
+	Types::Vec3d k1v = m_timeStep * particle.statesData()[stepIdx - 1].acceleration;
+	Types::Vec3d k2r = m_timeStep * (particle.statesData()[stepIdx - 1].velocity + k1v / 2.0);
+	Types::Vec3d k2v = m_timeStep * calcForce(stepIdx - 1, particle, k1r / 2.0) / particle.getMass();
+	Types::Vec3d k3r = m_timeStep * (particle.statesData()[stepIdx - 1].velocity + k2v / 2.0);
+	Types::Vec3d k3v = m_timeStep * calcForce(stepIdx - 1, particle, k2r / 2.0) / particle.getMass();
+	Types::Vec3d k4r = m_timeStep * (particle.statesData()[stepIdx - 1].velocity + k3v);
+	Types::Vec3d k4v = m_timeStep * calcForce(stepIdx - 1, particle, k3r) / particle.getMass();
+	auto pos = particle.statesData()[stepIdx - 1].pos + (k1r + 2.0 * k2r + 2.0 * k3r + k4r) / 6.0;
+	auto vel = particle.statesData()[stepIdx - 1].velocity + (k1v + 2.0 * k2v + 2.0 * k3v + k4v) / 6.0;
+	auto force = calcForce(stepIdx - 1, particle, pos);
+	auto acc = force / particle.getMass();
+	particle.pushState(stepIdx, force, acc, vel, pos);
+}
+
+void Simulation::calculateSteps(uint32_t startingStep)
+{
 	for (uint32_t i = startingStep; i < m_mutualMaxStep + 1; ++i)
 	{
 		for (auto& particle : m_particles)
 		{
-			Types::Vec3d force{ 0.0 };
-			for (auto& particle_other : m_particles)
+			switch (particle.getMethodMask())
 			{
-				if (particle.getId() != particle_other.getId())
-				{
-					force += particle.getCoulombForce(i - 1, particle_other);
-				}
+			case Types::OdeMethod::RK4:
+				rk4Step(i, particle);
+				break;
+			case Types::OdeMethod::BackwardEuler:
+				backwardEulerStep(i, particle);
+				break;
 			}
-			auto acc = force / particle.getMass();
-			auto vel = particle.statesData()[i - 1].velocity + acc * m_timeStep;
-			auto pos = particle.statesData()[i - 1].pos + vel * m_timeStep;
-			particle.pushState(i, force, acc, vel, pos);
 		}
 	}
 }
 
-void Simulation::calculateAllParticlePositions()
+void Simulation::backwardEulerStep(uint32_t stepIdx, Particle& particle)
 {
-	m_mutualMaxStep = static_cast<uint32_t>(m_simulationTime / m_timeStep);
+	Types::Vec3d nextPosGuess = particle.statesData()[stepIdx - 1].pos;
 
-	for (uint32_t i = 1; i < m_mutualMaxStep + 1; ++i)
+	for (int i = 0; i < BACKWARD_EULER_ITERS; ++i)
 	{
-		for (auto& particle : m_particles)
+		Types::Vec3d force{ 0.0 };
+		for (auto& particleOther : m_particles)
 		{
-			Types::Vec3d force{ 0.0 };
-			for (auto& particle_other : m_particles)
+			if ((particle.getId() != particleOther.getId()) && (particle.getMethodMask() == particleOther.getMethodMask()))
 			{
-				if (particle.getId() != particle_other.getId())
-				{
-					force += particle.getCoulombForce(i - 1, particle_other);
-				}
+				force += particle.getCoulombForcePosOverwrite(stepIdx - 1, particleOther, nextPosGuess);
 			}
-			particle.setAffectingForce(force);
-			particle.setAcceleration(force / particle.getMass());
-			particle.setVelocity(particle.getVelocity() + (particle.getAcceleration() * m_timeStep));
-			particle.setPos(particle.getPos() + (particle.getVelocity() * m_timeStep));
-			particle.pushState(i);
+		}
+		auto acc = force / particle.getMass();
+		auto vel = particle.statesData()[stepIdx - 1].velocity + (acc * m_timeStep);
+		auto pos = particle.statesData()[stepIdx - 1].pos + (vel * m_timeStep);
+
+		if ((nextPosGuess - pos).length() < BACKWARD_EULER_TOLERANCE) 
+		{
+			particle.pushState(stepIdx, force, acc, vel, pos);
+			break;
+		}
+		nextPosGuess = pos;
+	}
+}
+
+Types::Vec3d Simulation::calcForce(uint32_t stateId, Particle& particle, Types::Vec3d distanceMod)
+{
+	Types::Vec3d force{ 0.0 };
+	for (auto& particleOther : m_particles)
+	{
+		if ((particle.getId() != particleOther.getId()) && (particle.getMethodMask() == particleOther.getMethodMask()))
+		{
+			force += particle.getCoulombForce(stateId, particleOther, distanceMod);
 		}
 	}
+	return force;
 }
 
 void Simulation::updatePositionsThreaded()
@@ -321,29 +365,56 @@ void Simulation::displayMainCtrlWindow()
 	{
 		for (int n = 0; n < IM_ARRAYSIZE(modes); n++)
 		{
-			bool isSelected = (currentMode == modes[n]);
+			bool isSelected = (std::strcmp(currentMode, modes[n]) == 0);
 			if (ImGui::Selectable(modes[n], isSelected) && m_paused)
 			{
 				currentMode = modes[n];
 				switch (currentMode[0])
 				{
 				case '1':
-					m_mode = SimulationMode::STATIC;
+					m_mode = SimulationMode::Static;
 					break;
 				case '2':
-					m_mode = SimulationMode::PRECALCULATEDALL;
+					m_mode = SimulationMode::PrecalculatedAll;
 					break;
 				case '3':
-					m_mode = SimulationMode::PRECALCULATED20MS;
+					m_mode = SimulationMode::Precalculated20Ms;
 					break;
 				case '4':
-					m_mode = SimulationMode::REALTIME;
+					m_mode = SimulationMode::Realtime;
 					break;
 				}
 			}
 		}
 		ImGui::EndCombo();
-	} 
+	}
+
+	const char* methods[] = { "1. RK4", "2. BackwardEuler" };
+	static const char* currentMethod = methods[0];
+
+	if (ImGui::BeginCombo("Method##methodCombo", currentMethod))
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(methods); n++)
+		{
+			bool isSelected = (std::strcmp(currentMethod, methods[n]) == 0);
+			if (ImGui::Selectable(methods[n], isSelected) && m_paused)
+			{
+				currentMethod = methods[n];
+				switch (currentMethod[0])
+				{
+				case '1':
+					m_method = Types::OdeMethod::RK4;
+					for (auto& particle : m_particles) { particle.setMethodMask(Types::OdeMethod::RK4); }
+					break;
+				case '2':
+					m_method = Types::OdeMethod::BackwardEuler;
+					for (auto& particle : m_particles) { particle.setMethodMask(Types::OdeMethod::BackwardEuler); }
+					break;
+				}
+			}
+		}
+		ImGui::EndCombo();
+	}
 
 	//ImGui::Checkbox("Multithreading(EXPERIMENTAL)", &m_threadedCalculation);
 
@@ -428,18 +499,18 @@ void Simulation::startSimulation()
 
 		switch (m_mode)
 		{
-		case SimulationMode::STATIC:
+		case SimulationMode::Static:
 			break;
-		case SimulationMode::PRECALCULATEDALL:
-			calculateAllParticlePositions();
+		case SimulationMode::PrecalculatedAll:
+			calculateParticlePositions(true);
 			break;
-		case SimulationMode::PRECALCULATED20MS:
+		case SimulationMode::Precalculated20Ms:
 			if (m_threadedCalculation)
 			{
 				launchParticleThreads();
 			}
 			break;
-		case SimulationMode::REALTIME:
+		case SimulationMode::Realtime:
 			break;
 		}
 		m_paused = false;
@@ -478,26 +549,40 @@ void Simulation::displayParticleListWindow()
 			}
             ImGui::SameLine();
 			if (ImGui::CollapsingHeader(particleHeaderText(particle).c_str()) &&
-				((m_mode == SimulationMode::PRECALCULATEDALL || m_mode == SimulationMode::PRECALCULATED20MS && (m_elapsedTime == 0.0 || m_elapsedTime == m_simulationTime))
-					|| m_mode == SimulationMode::STATIC || m_mode == SimulationMode::REALTIME)
+				((m_mode == SimulationMode::PrecalculatedAll || m_mode == SimulationMode::Precalculated20Ms && (m_elapsedTime == 0.0 || m_elapsedTime == m_simulationTime))
+					|| m_mode == SimulationMode::Static || m_mode == SimulationMode::Realtime)
 				)
 			{
-				ImGui::Text("Charge: ");
-				ImGui::SameLine();
-				ImGui::InputDouble(std::format("##massl{}", particle.getId()).c_str(), &particle.chargeData());
-				ImGui::Text("Mass: ");
-				ImGui::SameLine();
-				ImGui::InputDouble(std::format("##chargel{}", particle.getId()).c_str(), &particle.massData());
-				ImGui::Text("X: ");
-				ImGui::SameLine();
-				ImGui::InputDouble(std::format("##posxl{}", particle.getId()).c_str(), &particle.posData().x);
-				ImGui::Text("Y: ");
-				ImGui::SameLine();
-				ImGui::InputDouble(std::format("##posyl{}", particle.getId()).c_str(), &particle.posData().y);
-				ImGui::Text("Z: ");
-				ImGui::SameLine();
-				ImGui::InputDouble(std::format("##poszl{}", particle.getId()).c_str(), &particle.posData().z);
-				if (m_mode == SimulationMode::STATIC)
+				ImGui::InputDouble(std::format("Mass##massl{}", particle.getId()).c_str(), &particle.chargeData());
+				ImGui::InputDouble(std::format("Charge##chargel{}", particle.getId()).c_str(), &particle.massData());
+				ImGui::InputDouble(std::format("X##posxl{}", particle.getId()).c_str(), &particle.posData().x);
+				ImGui::InputDouble(std::format("Y##posyl{}", particle.getId()).c_str(), &particle.posData().y);
+				ImGui::InputDouble(std::format("Z##poszl{}", particle.getId()).c_str(), &particle.posData().z);
+				ImGui::Checkbox(std::format("Movable##movable{}", particle.getId()).c_str(), &particle.movableData());
+
+				auto currentSelected = Constants::methods[static_cast<int>(particle.getMethodMask()) - 1];
+				if (ImGui::BeginCombo(std::format("Method##method{}", particle.getId()).c_str(), currentSelected))
+				{
+					for (int n = 0; n < IM_ARRAYSIZE(Constants::methods); n++)
+					{
+						bool isSelected = (std::strcmp(currentSelected, Constants::methods[n]) == 0);
+						if (ImGui::Selectable(Constants::methods[n], isSelected) && m_paused)
+						{
+							currentSelected = Constants::methods[n];
+							switch (currentSelected[0])
+							{
+							case '1':
+								particle.setMethodMask(Types::OdeMethod::RK4);
+								break;
+							case '2':
+								particle.setMethodMask(Types::OdeMethod::BackwardEuler);
+								break;
+							}
+						}
+					}
+					ImGui::EndCombo();
+				}
+				if (m_mode == SimulationMode::Static)
 				{
 					particle.setInitialState();
 					particle.clearStates();
@@ -567,7 +652,7 @@ void Simulation::displayParticleAddWindow()
 	
 	ImGui::Checkbox("Movable", &movable);
 
-	if (not (m_paused || (m_mode == SimulationMode::REALTIME || m_mode == SimulationMode::STATIC))) 
+	if (not (m_paused || (m_mode == SimulationMode::Realtime || m_mode == SimulationMode::Static))) 
 	{
 		ImGui::End();
 		return;

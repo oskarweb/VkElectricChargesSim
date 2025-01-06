@@ -12,7 +12,9 @@ public:
 	Trail(glm::vec3 startPos) : m_initialPos(startPos), m_lastPos(startPos) {}
 	void setInitialPos(glm::vec3 pos) { m_initialPos = pos; }
 	void setLastPos(glm::vec3 pos) { m_lastPos = pos; }
-	void addSection(glm::vec3 from, glm::vec3 to);
-	void addSection(glm::vec3 to);
+	void addSectionRed(glm::vec3 from, glm::vec3 to);
+	void addSectionRed(glm::vec3 to);
+	void addSectionYellow(glm::vec3 from, glm::vec3 to);
+	void addSectionYellow(glm::vec3 to);
 	void cleanup() override;
 };
