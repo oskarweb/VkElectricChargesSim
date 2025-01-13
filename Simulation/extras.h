@@ -71,8 +71,6 @@ namespace Types
 
 namespace Constants
 {
-    //constexpr const double SOFTENING_CONSTANT = 0.6;
-    //constexpr const Types::Vec3d SOFTENING_VEC3 = Types::Vec3d(SOFTENING_CONSTANT);
 	constexpr const uint32_t WIDTH = 1280;
 	constexpr const uint32_t HEIGHT = 720;
     constexpr const uint32_t TEXTURE_COUNT = 0;
@@ -80,17 +78,17 @@ namespace Constants
     constexpr const float EPSILON = 0.0000000000000000000000001f;
 	constexpr const glm::vec3 WORLD_UP = glm::vec3(0.0f, -1.0f, 0.0f);
 
-    inline static const char* methods[] = { "1. RK4", "2. ForwardEuler", "3. Leapfrog"};
+    const char* methods[] = { "1. RK4", "2. ForwardEuler", "3. Leapfrog"};
 
 	const std::vector<const char*> validationLayers =
 	{
 		"VK_LAYER_KHRONOS_validation"
 	};
 
-	const std::filesystem::path SHADERS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\shaders";
-	const std::filesystem::path TEXTURES_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\textures";
-	const std::filesystem::path MODELS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\models";
-    const std::filesystem::path FONTS_PATH = "C:\\Users\\Oskar\\source\\repos\\ElectricChargeSim\\Simulation\\fonts";
+	const std::filesystem::path SHADERS_PATH = "Simulation\\shaders";
+	const std::filesystem::path TEXTURES_PATH = "Simulation\\textures";
+	const std::filesystem::path MODELS_PATH = "Simulation\\models";
+    const std::filesystem::path FONTS_PATH = "Simulation\\fonts";
 
     template<typename T>
     constexpr T unitPrefixFactor(const char prefix)
