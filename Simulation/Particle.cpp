@@ -22,19 +22,22 @@ Particle::Particle(
 	double charge,
 	double mass,
 	bool movable,
-	Types::Vec3d pos
+	Types::Vec3d pos,
+	Types::Vec3d vel,
+	Types::OdeMethod method
 ) :
 	m_charge(charge),
 	m_mass(mass),
 	m_affectingForce(Types::Vec3d(0.0)),
 	m_acceleration(Types::Vec3d(0.0)),
-	m_velocity(Types::Vec3d(0.0)),
+	m_velocity(vel),
 	m_pos(pos),
 	m_movable(movable),
 	m_id(nextId++),
 	m_statesMutex(std::make_unique<std::mutex>()),
 	m_maxStep(std::make_unique<std::atomic<uint32_t>>(false)),
-	m_trail(static_cast<glm::vec3>(pos))
+	m_trail(static_cast<glm::vec3>(pos)),
+	m_method(method)
 {
 	uploadModel(P_MODEL_NAME, std::make_unique<ParticleModel>(static_cast<glm::vec3>(m_pos)));
 	uploadModel(F_VECTOR_MODEL_NAME, std::make_unique<VectorArrowModel>(static_cast<glm::vec3>(m_pos), static_cast<glm::vec3>(m_affectingForce), glm::vec3(0.0f)));
@@ -46,13 +49,14 @@ Particle::Particle(
 	double mass,
 	bool movable,
 	Types::Vec3d affectingForce,
-	Types::Vec3d pos
+	Types::Vec3d pos,
+	Types::Vec3d vel
 ) :
 	m_charge(charge),
 	m_mass(mass),
 	m_affectingForce(affectingForce),
 	m_acceleration(affectingForce / mass),
-	m_velocity(Types::Vec3d(0.0)),
+	m_velocity(vel),
 	m_pos(pos),
 	m_movable(movable),
 	m_id(nextId++),
@@ -166,8 +170,11 @@ bool Particle::updateFromPrecalcPos(uint32_t idx)
 			case Types::OdeMethod::RK4:
 				m_trail.addSectionRed(static_cast<glm::vec3>(m_pos));
 				break;
-			case Types::OdeMethod::BackwardEuler:
+			case Types::OdeMethod::ForwardEuler:
 				m_trail.addSectionYellow(static_cast<glm::vec3>(m_pos));
+				break;
+			case Types::OdeMethod::Leapfrog:
+				m_trail.addSectionGreen(static_cast<glm::vec3>(m_pos));
 				break;
 			}
 		}
