@@ -85,10 +85,10 @@ namespace Constants
 		"VK_LAYER_KHRONOS_validation"
 	};
 
-	const std::filesystem::path SHADERS_PATH = "Simulation\\shaders";
-	const std::filesystem::path TEXTURES_PATH = "Simulation\\textures";
-	const std::filesystem::path MODELS_PATH = "Simulation\\models";
-    const std::filesystem::path FONTS_PATH = "Simulation\\fonts";
+	const std::filesystem::path SHADERS_PATH = "shaders";
+	const std::filesystem::path TEXTURES_PATH = "textures";
+	const std::filesystem::path MODELS_PATH = "models";
+    const std::filesystem::path FONTS_PATH = "fonts";
 
     template<typename T>
     constexpr T unitPrefixFactor(const char prefix)
