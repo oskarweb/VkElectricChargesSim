@@ -64,22 +64,23 @@ namespace Types
     enum class OdeMethod
     {
         RK4 = 1,
-        BackwardEuler,
+        ForwardEuler,
+        Leapfrog
     };
 }
 
 namespace Constants
 {
-    constexpr double SOFTENING_CONSTANT = 0.6;
-    constexpr Types::Vec3d SOFTENING_VEC3 = Types::Vec3d(SOFTENING_CONSTANT);
-	constexpr uint32_t WIDTH = 1280;
-	constexpr uint32_t HEIGHT = 720;
-    constexpr uint32_t TEXTURE_COUNT = 1;
-    constexpr float AXES_LENGTH = 2000.0f;
-    constexpr float EPSILON = 0.0000000000000000000000001f;
-	constexpr glm::vec3 WORLD_UP = glm::vec3(0.0f, -1.0f, 0.0f);
+    //constexpr const double SOFTENING_CONSTANT = 0.6;
+    //constexpr const Types::Vec3d SOFTENING_VEC3 = Types::Vec3d(SOFTENING_CONSTANT);
+	constexpr const uint32_t WIDTH = 1280;
+	constexpr const uint32_t HEIGHT = 720;
+    constexpr const uint32_t TEXTURE_COUNT = 0;
+    constexpr const float AXES_LENGTH = 2000.0f;
+    constexpr const float EPSILON = 0.0000000000000000000000001f;
+	constexpr const glm::vec3 WORLD_UP = glm::vec3(0.0f, -1.0f, 0.0f);
 
-    inline static const char* methods[] = { "1. RK4", "2. BackwardEuler" };
+    inline static const char* methods[] = { "1. RK4", "2. ForwardEuler", "3. Leapfrog"};
 
 	const std::vector<const char*> validationLayers =
 	{

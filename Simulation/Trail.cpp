@@ -26,6 +26,19 @@ void Trail::addSectionYellow(glm::vec3 to)
 	m_lastPos = to;
 }
 
+void Trail::addSectionGreen(glm::vec3 from, glm::vec3 to)
+{
+	uploadModel(std::to_string(idx), std::make_unique<GreenLineModel>(from, to));
+	idx++;
+}
+
+void Trail::addSectionGreen(glm::vec3 to)
+{
+	uploadModel(std::to_string(idx), std::make_unique<GreenLineModel>(m_lastPos, to));
+	idx++;
+	m_lastPos = to;
+}
+
 void Trail::cleanup()
 {
 	Node::cleanup();

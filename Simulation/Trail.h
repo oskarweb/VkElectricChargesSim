@@ -16,5 +16,7 @@ public:
 	void addSectionRed(glm::vec3 to);
 	void addSectionYellow(glm::vec3 from, glm::vec3 to);
 	void addSectionYellow(glm::vec3 to);
+	void addSectionGreen(glm::vec3 from, glm::vec3 to);
+	void addSectionGreen(glm::vec3 to);
 	void cleanup() override;
 };

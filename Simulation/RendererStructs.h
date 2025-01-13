@@ -80,15 +80,15 @@ struct RenderableInfo
     glm::mat4 transformMatrix;
 };
 
-inline constexpr std::array<Vertex, 36> cubeVertices = {
+inline constexpr const std::array<Vertex, 36> cubeVertices = {
     // Front
-    Vertex{{-0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{-0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f,-0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f,-0.5f,-0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
           
-    Vertex{{-0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f,-0.5f,-0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f,-0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
     // Back  
     Vertex{{ 0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
     Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
@@ -106,79 +106,84 @@ inline constexpr std::array<Vertex, 36> cubeVertices = {
     Vertex{{-0.5f,-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     Vertex{{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     // Right  
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f,-0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
          
-    Vertex{{ 0.5f,-0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f,-0.5f,-0.5f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     // Top    
-    Vertex{{-0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{-0.5f,-0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f,-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
         
-    Vertex{{-0.5f,-0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f,-0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f,-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f,-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     // Bottom
-    Vertex{{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{-0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
           
-    Vertex{{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 18> pyramidVertices = {
+inline constexpr const std::array<Vertex, 18> pyramidVertices = {
     // Front
-    Vertex{{-0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.0f,-0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.0f,-0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     // Back          
-    Vertex{{ 0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.0f,-0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.0f,-0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     // Left          
     Vertex{{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
     Vertex{{-0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
     Vertex{{ 0.0f,-0.5f, 0.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
     // Right         
-    Vertex{{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.0f,-0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.0f,-0.5f, 0.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
     // Bottom
-    Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
 
-    Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{-0.5f, 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    Vertex{{ 0.5f, 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{-0.5f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+    Vertex{{ 0.5f, 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 2> redLineVertices = {
+inline constexpr const std::array<Vertex, 2> redLineVertices = {
     Vertex{{ 0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     Vertex{{ 1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 2> yellowLineVertices = {
+inline constexpr const std::array<Vertex, 2> yellowLineVertices = {
     Vertex{{ 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     Vertex{{ 1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 2> xAxisVertices = {
+inline constexpr const std::array<Vertex, 2> greenLineVertices = {
+    Vertex{{ 0.0f, 0.0f, 0.0f}, {0.0f, 0.3f, 0.0f}, {0.0f, 0.0f}},
+    Vertex{{ 1.0f, 0.0f, 0.0f}, {0.0f, 0.3f, 0.0f}, {0.0f, 0.0f}},
+};
+
+inline constexpr const std::array<Vertex, 2> xAxisVertices = {
     Vertex{{ 0.0f,                   0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     Vertex{{ Constants::AXES_LENGTH, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 2> yAxisVertices = {
+inline constexpr const std::array<Vertex, 2> yAxisVertices = {
     Vertex{{ 0.0f, 0.0f,                   0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     Vertex{{ 0.0f, Constants::AXES_LENGTH, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 };
 
-inline constexpr std::array<Vertex, 2> zAxisVertices = {
+inline constexpr const std::array<Vertex, 2> zAxisVertices = {
     Vertex{{ 0.0f, 0.0f,                   0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
     Vertex{{ 0.0f, 0.0f, Constants::AXES_LENGTH}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
 };
