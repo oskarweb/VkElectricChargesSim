@@ -165,6 +165,35 @@ struct YellowLineModel : Model
 	}
 };
 
+struct GreenLineModel : Model
+{
+	using Model::renderables;
+
+	void update(glm::vec3 pos = glm::vec3(0.0f), glm::vec3 faceDirection = glm::vec3(0.0f), glm::vec3 offset = glm::vec3(0.0f)) override
+	{
+		(*renderables["trail"]).second.transformMatrix = glm::translate(glm::mat4(1.0f), pos);
+	}
+
+	GreenLineModel(glm::vec3 from, glm::vec3 to) : Model(from)
+	{
+		glm::vec3 dir = to - from;
+		float length = glm::length(dir);
+		glm::vec3 normDir = glm::normalize(dir);
+		glm::quat rotation = glm::rotation(glm::vec3(1.0f, 0.0f, 0.0f), normDir);
+		glm::mat4 translation = glm::translate(glm::mat4(1.0f), from);
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(length, 1.0f, 1.0f));
+		renderableInfos = std::vector<RenderableInfo>
+		{
+			RenderableInfo{
+				"trail",
+				"greenline",
+				"line",
+				translation * glm::toMat4(rotation) * scale
+			}
+		};
+	}
+};
+
 struct AxesModel : Model
 {
 	using Model::renderables;
